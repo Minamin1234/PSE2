@@ -1,7 +1,5 @@
-from cmath import sqrt
-
-
-x = [int(input("x1: ")),int(input("x2: "))]
-y = [int(input("y1: ")),int(input("y2: "))]
-dist = sqrt(pow((x[1] - x[0]),2) + pow((y[1] - y[0]),2))
-print(pow(dist,2))
+import math
+xy1 = [int(input("x1: ")),int(input("y1: "))]
+xy2 = [int(input("x2: ")),int(input("y2: "))]
+dist = math.sqrt((xy2[0] - xy1[0])**2 + (xy2[1] - xy1[1])**2)
+print(dist**2)
