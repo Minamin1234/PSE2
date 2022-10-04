@@ -1,0 +1,6 @@
+a = int(input("整数aを入力してください"))
+b = int(input("整数bを入力してください"))
+c = float(input("小数cを入力してください"))
+d = float(input("小数dを入力してください"))
+print(a-b,c+d)
+print(a+c,int(a+c))
