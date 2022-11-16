@@ -1,5 +1,5 @@
 # HT21A099 南　李玖
-# スプライトの画像や音を変更する
+# 画面を縦に広げて縦方向にも動くようにする
 from pse2pgzrun import *
 import random
 
@@ -10,8 +10,8 @@ CATPIC_HAPPY = "cat01_happy"
 cat = Actor(CATPIC_NORM)
 cat.topright = 0,10
 
-WIDTH = 1000
-HEIGHT = cat.height + 20
+WIDTH = 600
+HEIGHT = cat.height + 600
 
 def draw():
     screen.clear()
@@ -20,8 +20,13 @@ def draw():
 
 def update():
     cat.left += 4
+    cat.x += 4
+    cat.y += -8
     if cat.left > WIDTH:
         cat.left = 0
+    if cat.top < -HEIGHT:
+        cat.top = HEIGHT
+    print(f"top:{cat.top}")
 
 def set_cat_normal():
     cat.image = CATPIC_NORM
