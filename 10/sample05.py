@@ -37,11 +37,13 @@ def update(dt):
     elif ball.left < 0:
         ball.left = 0
         ball.vx = -ballvx
-    if ball.bottom > HEIGHT:
-        ball.bottom = HEIGHT
-        ballvy = -ballvy
-    elif ball.top < 0:
+    if ball.top < 0:
         ball.top = 0
         ballvy = -ballvy
+
+    if paddle.colliderect(ball):
+        ball.bottom = paddle.top
+        ballvy = -ballvy
+        ballvx += 0.24 * vx
 
 pgzrun.go()
