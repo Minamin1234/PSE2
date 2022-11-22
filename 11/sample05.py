@@ -79,6 +79,23 @@ def update(dt):
     for b in blocks:
         if b.colliderect(ball):
             ballvy = -ballvy
+            overlapT = ball.bottom - b.top
+            overlapB = b.bottom - ball.top
+            overlapL = ball.right - b.left
+            overlapR = b.right - ball.left
+            smallest = min([overlapT,overlapB,overlapL,overlapR])
+            if smallest == overlapT:
+                ball.bottom = b.top
+                ballvy = -ballvy
+            elif smallest == overlapB:
+                ball.top = b.bottom
+                ballvy = -ballvy
+            elif smallest == overlapL:
+                ball.right = b.left
+                ballvx = -ballvx
+            elif smallest == overlapR:
+                ball.left = b.right
+                ballvx = -ballvx
             blocks.remove(b)
             tone_crash.play()
             score += 1
