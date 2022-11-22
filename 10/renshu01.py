@@ -10,7 +10,7 @@ paddle = Actor("paddle",center=(275,550))
 
 ballvx  = 200
 ballvy = 200
-ball = Actor("ball",center=(145,400))
+ball = Actor("rocket",center=(145,400))
 
 
 def draw():
@@ -22,9 +22,9 @@ def update(dt):
     global ballvx,ballvy
     vx = 0
     if keyboard.right:
-        vx = 300
+        vx = 100
     if keyboard.left:
-        vx = -300
+        vx = -100
     paddle.x += vx + dt
     if paddle.right > WIDTH:
         paddle.right = WIDTH
