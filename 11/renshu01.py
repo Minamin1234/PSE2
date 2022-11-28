@@ -3,6 +3,11 @@ from pse2pgzrun import * # type ignore
 WIDTH = 550
 HEIGHT = 600
 
+tone_crash = tone.create('F5',0.01)
+tone_bounce = tone.create('G3',0.01)
+
+score = 0
+
 paddle = Actor("paddle",center=(275,550))
 
 ballvx  = 200
@@ -20,6 +25,10 @@ clear3 = False
 
 def draw():
     screen.clear()
+    screen.draw.text(
+        "SCORE: " + str(score),
+        left=350,top=25,fontsize=50, color="white"
+    )
     paddle.draw()
     ball.draw()
     for b in blocks:
@@ -34,7 +43,7 @@ def draw():
 
 
 def update(dt):
-    global ballvx, ballvy
+    global ballvx, ballvy ,score
     if blocks == []:
         return
     vx = 0
@@ -65,11 +74,31 @@ def update(dt):
         ball.bottom = paddle.top
         ballvy = -ballvy
         ballvx += 0.25 * vx
+        tone_bounce.play()
 
     for b in blocks:
         if b.colliderect(ball):
             ballvy = -ballvy
+            overlapT = ball.bottom - b.top
+            overlapB = b.bottom - ball.top
+            overlapL = ball.right - b.left
+            overlapR = b.right - ball.left
+            smallest = min([overlapT,overlapB,overlapL,overlapR])
+            if smallest == overlapT:
+                ball.bottom = b.top
+                ballvy = -ballvy
+            elif smallest == overlapB:
+                ball.top = b.bottom
+                ballvy = -ballvy
+            elif smallest == overlapL:
+                ball.right = b.left
+                ballvx = -ballvx
+            elif smallest == overlapR:
+                ball.left = b.right
+                ballvx = -ballvx
             blocks.remove(b)
+            tone_crash.play()
+            score += 1
             break
 
 pgzrun.go()

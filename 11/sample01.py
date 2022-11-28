@@ -43,7 +43,7 @@ def update(dt):
         ballvx = -ballvx
     elif ball.left < 0:
         ball.left = 0
-        ball.vx = -ballvx
+        ballvx = -ballvx
     if ball.top < 0:
         ball.top = 0
         ballvy = -ballvy
