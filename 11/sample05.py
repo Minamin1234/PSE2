@@ -78,7 +78,6 @@ def update(dt):
 
     for b in blocks:
         if b.colliderect(ball):
-            ballvy = -ballvy
             overlapT = ball.bottom - b.top
             overlapB = b.bottom - ball.top
             overlapL = ball.right - b.left
