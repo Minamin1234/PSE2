@@ -349,6 +349,24 @@ class Player(Pawn):
         print(f"capacity: {self.weapon.capacity_}")
 
 
+# 敵クラス
+class Enemy(Pawn):
+    Enemypic: str = ""
+    EnemyMoveSpeed = 5
+    IsLookAtTarget: bool = True
+    weapon: Weapon = None
+    target_: Pawn = None
+
+    def __init__(self):
+        super().__init__()
+        self.isBlock = True
+        self.isKeyInput = False
+
+    def update(self, dt):
+        pass
+
+
+
 
 
 world = World()
