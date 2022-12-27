@@ -105,17 +105,17 @@ class World:
 
 # ゲーム内で配置/移動可能なオブジェクトクラス
 class Pawn(Actor):
-    LEFT = 0
-    RIGHT = 1
-    UP = 2
-    DOWN = 3
-    visible: bool = True
-    world: World = None
-    location: Vector2 = Vector2(0, 0)
-    isBlock: bool = False
-    isKeyInput: bool = False
-    moveInput: Vector2 = Vector2(0, 0)
-    collide = False, False, False, False
+    LEFT = 0  # 左
+    RIGHT = 1  # 右
+    UP = 2  # 上
+    DOWN = 3  # 下
+    visible: bool = True  # 表示/非表示を設定します
+    world: World = None  # 自身が配置されているワールド
+    location: Vector2 = Vector2(0, 0)  # 位置
+    isBlock: bool = False  # 壁にブロックされるかどうか
+    isKeyInput: bool = False  # キー入力を有効にするかどうか
+    moveInput: Vector2 = Vector2(0, 0)  # 入力
+    collide = False, False, False, False  # 現在、壁に衝突しているかどうか
 
     def __init__(self, pic_name):
         super().__init__(pic_name)
@@ -183,12 +183,30 @@ class Pawn(Actor):
 
         return left, right, up, down
 
+    # ワールド内のオブジェクトと衝突しているかどうかを判定し、
+    # 衝突しているオブジェクト一覧を返します
+    def is_hit(self):
+        hits = []
+        for p in self.world.Pawns:
+            if p == self:
+                continue
+            if p.colliderect(self):
+                hits.append(p)
+        return hits
+
+    # Pawn同士で衝突した際に呼ばれます
+    def on_hit(self, actor):
+        pass
+
+
 # 発射する弾クラス
 class Bullet(Pawn):
+    owner: Pawn = None  # 所有者(発砲者)
     pic: str = "ball_blue_small_2"  # 弾の画像
     sound_fire: str = ""  # 発砲音
     sound_reload: str = ""  # 装填音
     sound_empty: str = ""  # 空撃ち音
+    damage = 15
     direction = Vector2(0, 0)  # 弾の飛翔方向
     velocity: float = 0.0  # 飛翔速度
     is_bounce: bool = False  # 障害物や壁に反発するかどうか
@@ -196,6 +214,7 @@ class Bullet(Pawn):
     hit_once: bool = False  # オブジェクトの種類に関係なく一度当たったら消滅するか
     hurt_self: bool = False  # その弾は発砲者自身にダメージを与えるか
     bounces_: int = 0  # 現在の反発回数
+    hit_ignore_owner = False  # 弾は発砲者の衝突判定を無視するかどうか
 
     def __init__(self):
         super().__init__(self.pic)
@@ -224,15 +243,24 @@ class Bullet(Pawn):
             self.direction.x = -self.direction.x
         if self.collide[self.UP] or self.collide[self.DOWN]:
             self.direction.y = -self.direction.y
+        hits = self.is_hit()
+        for p in hits:
+            if type(p) is Enemy:
+                p.on_hit(self)
+                self.destroy()
 
         self.location.x += self.direction.x * self.velocity
         self.location.y += self.direction.y * self.velocity
+
+
 
 
 # 武器クラス
 class Weapon:
     owner: Pawn = None  # 所有者
     bullet: Bullet = None  # 発射する弾
+    damage = 15
+    damage_multiply = 1.5
     capacity: int = 10  # 装弾数
     fire_rate = 0.25  # 発射速度
     reload_time: float = 3.0  # 装填時間
@@ -301,16 +329,19 @@ class HandGun(Weapon):
 # プレイヤー
 class Player(Pawn):
     PlayerPic: str = "manblue_gun"  # 画像とActorは90度ずれている
+    HP = 100
     PlayerMoveSpeed = 5
     IsFollowMoveDirection = True
     InitRotation = 0
     weapon: Weapon = None
+    hp_ = 0
 
     def __init__(self):
         super().__init__(self.PlayerPic)
         self.isBlock = True
         self.isKeyInput = True
         self.weapon = HandGun(self)
+        self.hp_ = self.HP
 
     def update(self, dt):
         super().update(dt)
@@ -351,19 +382,25 @@ class Player(Pawn):
 
 # 敵クラス
 class Enemy(Pawn):
-    Enemypic: str = ""
+    Enemypic: str = "manbrown_gun"
+    HP = 50
     EnemyMoveSpeed = 5
     IsLookAtTarget: bool = True
     weapon: Weapon = None
     target_: Pawn = None
 
     def __init__(self):
-        super().__init__()
+        super().__init__(self.Enemypic)
         self.isBlock = True
         self.isKeyInput = False
 
     def update(self, dt):
         pass
+
+    def on_hit(self, actor):
+        super().on_hit(actor)
+        print(f"hit: {actor}")
+        self.destroy()
 
 
 
@@ -371,7 +408,9 @@ class Enemy(Pawn):
 
 world = World()
 player = Player()
+enemy = Enemy()
 player.spawn(world)
+enemy.spawn(world)
 
 def draw():
     screen.clear()
