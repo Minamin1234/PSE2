@@ -203,9 +203,6 @@ class Pawn(Actor):
 class Bullet(Pawn):
     owner: Pawn = None  # 所有者(発砲者)
     pic: str = "ball_blue_small_2"  # 弾の画像
-    sound_fire: str = ""  # 発砲音
-    sound_reload: str = ""  # 装填音
-    sound_empty: str = ""  # 空撃ち音
     damage = 15
     direction = Vector2(0, 0)  # 弾の飛翔方向
     velocity: float = 0.0  # 飛翔速度
@@ -259,6 +256,9 @@ class Bullet(Pawn):
 class Weapon:
     owner: Pawn = None  # 所有者
     bullet: Bullet = None  # 発射する弾
+    sound_fire: str = ""  # 発砲音
+    sound_reload: str = ""  # 装填音
+    sound_empty: str = ""  # 空撃ち音
     damage = 15
     damage_multiply = 1.5
     capacity: int = 10  # 装弾数
