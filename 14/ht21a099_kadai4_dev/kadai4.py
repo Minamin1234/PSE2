@@ -290,19 +290,25 @@ class Weapon:
                 direction = Vector2.get_direction_fromdeg(direction - 90)
                 blt.set_direction(direction)
                 self.capacity_ -= 1
+                sounds.handgun_shot.play()
                 pass
+            else:
+                sounds.handgun_empty.play()
             pass
         pass
 
     # 弾の装填を行う
     def reload(self):
-        self.is_reloading_ = True
-        clock.schedule_unique(self.on_ended_reload, self.reload_time)
+        if not self.is_reloading_:
+            self.is_reloading_ = True
+            sounds.handgun_reload.play()
+            clock.schedule_unique(self.on_ended_reload, self.reload_time)
         pass
 
     # 装填が完了した際に呼ばれる
     def on_ended_reload(self):
         print("Reloaded")
+        sounds.handgun_slide.play()
         self.capacity_ = self.capacity
         self.is_reloading_ = False
 
