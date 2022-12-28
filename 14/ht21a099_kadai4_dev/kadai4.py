@@ -248,7 +248,7 @@ class Pawn(Actor):
 # 発射する弾クラス
 class Bullet(Pawn):
     owner: Pawn = None  # 所有者(発砲者)
-    pic: str = "ball_blue_small_2"  # 弾の画像
+    pic: str = "ball_red_small_2"  # 弾の画像
     damage = 15  # 基本ダメージ
     direction = Vector2(0, 0)  # 弾の飛翔方向
     velocity: float = 0.0  # 飛翔速度
