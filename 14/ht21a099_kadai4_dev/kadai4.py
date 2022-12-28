@@ -368,6 +368,15 @@ class HandGun(Weapon):
         super().reload()
         return self
 
+# ゲーム内に配置可能な静的オブジェクト
+class StaticObject(Pawn):
+    Pic: str = ""
+
+    def __init__(self, pic: str):
+        self.Pic = pic
+        super().__init__(self.Pic)
+        self.isKeyInput = False
+
 
 # プレイヤー/敵共通のキャラクタークラス
 class Character(Pawn):
