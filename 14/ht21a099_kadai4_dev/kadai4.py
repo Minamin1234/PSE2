@@ -61,8 +61,22 @@ class Vector2:
         v = Vector2(-self.x, -self.y)
         return v
 
+    def __mul__(self, other):
+        v = Vector2(self.x * other, self.y * other)
+        return v
+
+    def __iadd__(self, other):
+        v = Vector2(self.x + other.x, self.y + other.y)
+        return v
+
     def __str__(self):
         return f"({self.x}, {self.y})"
+
+    # 2点間の距離の二乗を返します
+    def get_distance2(a, b):
+        x = b.x - a.x
+        y = b.y - a.y
+        return x**2 + y**2
 
     # 二つのベクトルをなす角度を返します(度数)
     def get_angle2(a, b):
@@ -130,6 +144,8 @@ class World:
 
     # 指定したオブジェクトをワールドから削除し更新/描画処理から除外させます
     def delete_pawn(self, pawn):
+        if not pawn in self.Pawns:
+            return
         self.Pawns.remove(pawn)
 
 
@@ -259,6 +275,7 @@ class Bullet(Pawn):
 
     def update(self, dt):
         super().update(dt)
+
         if self.is_collide_wall():
             if self.hit_once:
                 self.destroy()
@@ -273,9 +290,10 @@ class Bullet(Pawn):
             self.direction.y = -self.direction.y
         hits = self.is_hit()
         for p in hits:
-            if p != self.owner:
+            if p != self.owner and type(p) is not StaticObject:
                 p.on_hit(self)
-                self.destroy()
+                if self.hit_once:
+                    self.destroy()
 
         self.location.x += self.direction.x * self.velocity
         self.location.y += self.direction.y * self.velocity
@@ -324,6 +342,7 @@ class Weapon:
                     direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
                     print("Diffusion")
                 blt.set_direction(direction)  # 飛翔方向を設定
+                blt.location += direction * 10
                 self.capacity_ -= 1  # 現在の装弾数を減らす
                 sounds.handgun_shot.play()  # 発砲音を鳴らす
                 pass
@@ -352,6 +371,7 @@ class HandGun(Weapon):
 
     def __init__(self, owner: Pawn):
         super().__init__(owner)
+        self.distance = 500000
         self.capacity = 6
         self.capacity_ = self.capacity
         self.fire_rate = 0.5
@@ -376,6 +396,36 @@ class StaticObject(Pawn):
         self.Pic = pic
         super().__init__(self.Pic)
         self.isKeyInput = False
+
+
+class Ground(StaticObject):
+    def __init__(self):
+        self.Pic = "tile_01"
+        super().__init__(self.Pic)
+
+
+class Map:
+    NONE = 0
+    GROUND_GREEN = 1
+    GROUND_ = 2
+    world: World = None
+    size_: Vector2 = Vector2(10, 10)
+    map_: list = []
+
+    def __init__(self, world: World):
+        self.world = world
+        pass
+
+    # マップを生成します
+    def generate(self):
+        for y in range(0, self.size_.y):
+            for x in range(0, self.size_.x):
+                g = Ground()
+                g.location.x = g.width * x
+                g.location.y = g.height * y
+                print(g.location)
+                g.spawn(self.world)
+                self.map_.append(g)
 
 
 # プレイヤー/敵共通のキャラクタークラス
@@ -505,8 +555,11 @@ class Enemy(Character):
 
 
 world = World()
+mp = Map(world)
+mp.generate()
 player = Player()
 enemy = Enemy()
+enemy.location = Vector2(150, 150)
 player.spawn(world)
 enemy.spawn(world)
 """
