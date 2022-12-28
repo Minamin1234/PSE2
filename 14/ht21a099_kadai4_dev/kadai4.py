@@ -1,5 +1,6 @@
 # HT21A099 南　李玖
 import math
+import random
 
 import pygame.mouse
 from pse2pgzrun import *  # type: ignore
@@ -16,6 +17,22 @@ class Util:
         if val > val_max:
             return val_max
         return val
+
+    # 基本ダメージからランダムな乗数を掛けたダメージを返します
+    def random_damage(dmg: float, dmg_multiply: float):
+        multi = random.uniform(-dmg_multiply, dmg_multiply)
+        result = dmg + (dmg * multi)
+        if result < 0:
+            result = 0.0
+        return result
+
+    # ダメージからランダムな防御乗数を掛けたダメージを返します
+    def random_defenceddamage(dmg: float, def_multiply: float):
+        multi = random.uniform(0, def_multiply)
+        result = dmg - (dmg * multi)
+        if result < 0:
+            result = 0.0
+        return result
 
 # 二次元ベクトルを表すクラス
 class Vector2:
@@ -260,8 +277,8 @@ class Weapon:
     sound_fire: str = ""  # 発砲音
     sound_reload: str = ""  # 装填音
     sound_empty: str = ""  # 空撃ち音
-    damage = 15
-    damage_multiply = 1.5
+    damage = 15  # 基本ダメージ
+    damage_multiply = 0.5  # ダメージ乗数
     capacity: int = 10  # 装弾数
     fire_rate = 0.25  # 発射速度
     reload_time: float = 3.0  # 装填時間
@@ -284,6 +301,7 @@ class Weapon:
         if not self.is_reloading_:
             if self.capacity_ > 0:
                 blt = Bullet(self.owner)
+                blt.damage = Util.random_damage(self.damage, self.damage_multiply)
                 blt.spawn(self.owner.world)
                 blt.location = Vector2.get_vector(self.owner.location)
                 direction = Vector2.get_angle2(self.owner.location, at)
@@ -333,27 +351,52 @@ class HandGun(Weapon):
         return self
 
 
-# プレイヤー
-class Player(Pawn):
-    PlayerPic: str = "manblue_gun"  # 画像とActorは90度ずれている
+class Character(Pawn):
+    SkinPic: str = ""
     HP = 100
-    PlayerMoveSpeed = 5
-    IsFollowMoveDirection = True
-    InitRotation = 0
+    Def_multiply: float = 0.0
+    CharacterMoveSpeed = 5
     weapon: Weapon = None
     hp_ = 0
 
+    def __init__(self, pic_name: str):
+        super().__init__(self.SkinPic)
+        pass
+
+    def update(self, dt):
+        super().update(dt)
+        self.location.x += self.moveInput.x * self.CharacterMoveSpeed
+        self.location.y += self.moveInput.y * -self.CharacterMoveSpeed
+
+    def mouse_down_input(self, pos):
+        pass
+
+    def on_hit(self, actor):
+        pass
+
+    def apply_damage(self, bullet: Bullet):
+        pass
+    
+    def key_input(self, keys):
+        super().key_input(keys)
+
+
+# プレイヤー
+class Player(Character):
+
     def __init__(self):
-        super().__init__(self.PlayerPic)
+        self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
+        super().__init__(self.SkinPic)
+        self.HP = 100
+        self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
         self.weapon = HandGun(self)
+        self.Def_multiply = 0.5
         self.hp_ = self.HP
 
     def update(self, dt):
         super().update(dt)
-        self.location.x += self.moveInput.x * self.PlayerMoveSpeed
-        self.location.y += self.moveInput.y * -self.PlayerMoveSpeed
 
         mousepos = Vector2(0, 0)
         mousepos.x, mousepos.y = pygame.mouse.get_pos()
@@ -386,22 +429,36 @@ class Player(Pawn):
         self.weapon.fire(mousepos)
         print(f"capacity: {self.weapon.capacity_}")
 
+    def on_hit(self, actor):
+        blt: Bullet = actor
+        self.apply_damage(blt)
+
+    def apply_damage(self, bullet: Bullet):
+        self.hp_ -= Util.random_defenceddamage(bullet.damagem, self.Def_multiply)
+        if self.hp_ <= 0:
+            self.destroy()
+
+        pass
+
 
 # 敵クラス
-class Enemy(Pawn):
-    Enemypic: str = "manbrown_gun"
+class Enemy(Character):
     HP = 50
-    EnemyMoveSpeed = 5
     IsLookAtTarget: bool = True
-    weapon: Weapon = None
     target_: Pawn = None
 
     def __init__(self):
-        super().__init__(self.Enemypic)
+        self.SkinPic = "manbrown_gun"
+        super().__init__(self.SkinPic)
+        self.HP = 50
+        self.CharacterMoveSpeed = 5
+        self.weapon = None
         self.isBlock = True
         self.isKeyInput = False
+        self.target_ = None
 
     def update(self, dt):
+        super().update(dt)
         pass
 
     def on_hit(self, actor):
