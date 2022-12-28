@@ -397,18 +397,65 @@ class StaticObject(Pawn):
         self.isKeyInput = False
 
 
+# 地面/タイルのクラス
 class Ground(StaticObject):
     def __init__(self):
         self.Pic = "tile_01"
         super().__init__(self.Pic)
 
 
+# 床のクラス
+class Floor(StaticObject):
+    def __init__(self):
+        self.Pic = ""
+        super().__init__(self.Pic)
+
+
+# 壁クラス
+class Wall(StaticObject):
+    wall_up = ""
+    wall_down = ""
+    wall_left = ""
+    wall_right = ""
+    wall_corner_upleft = ""
+    wall_corner_upright = ""
+    wall_corner_downleft = ""
+    wall_corner_downright = ""
+    wall_joint_upleft = ""
+    wall_joint_upright = ""
+    wall_joint_downleft = ""
+    wall_joint_donwright = ""
+
+    def __init__(self):
+        self.Pic = ""
+        super().__init__(self.Pic)
+
+
+N = 0  # None
+G = 1  # Ground
+U = 1  # Up
+D = 2  # Down
+L = 3  # Left
+R = 4  # Right
+JUL = 5  # Joint_upleft
+JUR = 6  # Joint_upright
+JDL = 7  # Joint_downleft
+JDR = 8  # Joint_downright
+CUL = 9  # Corner_upleft
+CUR = 10  # Corner_upright
+CDL = 11  # Corner_downleft
+CDR = 12  # Corner_downright
+
+
 class Map:
-    NONE = 0
-    GROUND_GREEN = 1
-    GROUND_ = 2
-    world: World = None
-    size_: Vector2 = Vector2(10, 10)
+    world: World = None  # マップを生成するワールド
+    ground_map: list = []  # 地面配置マップ
+    ground_style_map: list = []  # 地面スタイルマップ
+    ground_styles: list = []  # 地面スタイル一覧
+    obj_map: list = []  # オブジェクト配置マップ
+    obj_style_map: list = []  # オブジェクト種類マップ
+    obj_styles: list = []  # オブジェクト一覧
+    size_: Vector2 = Vector2(10, 10)  # マップサイズ
     map_: list = []
 
     def __init__(self, world: World):
