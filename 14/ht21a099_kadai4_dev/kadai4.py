@@ -213,13 +213,14 @@ class Bullet(Pawn):
     bounces_: int = 0  # 現在の反発回数
     hit_ignore_owner = False  # 弾は発砲者の衝突判定を無視するかどうか
 
-    def __init__(self):
+    def __init__(self, owner: Pawn):
         super().__init__(self.pic)
         self.isBlock = True
         self.isKeyInput = False
         self.is_bounce = True
         self.bounces = 2
         self.velocity = 30.0
+        self.owner = owner
 
     # 飛翔方向を設定します
     def set_direction(self, direction: Vector2):
@@ -242,7 +243,7 @@ class Bullet(Pawn):
             self.direction.y = -self.direction.y
         hits = self.is_hit()
         for p in hits:
-            if type(p) is Enemy:
+            if p != self.owner:
                 p.on_hit(self)
                 self.destroy()
 
@@ -282,7 +283,7 @@ class Weapon:
     def fire(self, at: Vector2):
         if not self.is_reloading_:
             if self.capacity_ > 0:
-                blt = Bullet()
+                blt = Bullet(self.owner)
                 blt.spawn(self.owner.world)
                 blt.location = Vector2.get_vector(self.owner.location)
                 direction = Vector2.get_angle2(self.owner.location, at)
@@ -400,10 +401,6 @@ class Enemy(Pawn):
     def on_hit(self, actor):
         super().on_hit(actor)
         print(f"hit: {actor}")
-        self.destroy()
-
-
-
 
 
 world = World()
