@@ -18,6 +18,11 @@ class Util:
             return val_max
         return val
 
+    # ランダムな真偽値を返します(percentで真になる確率を指定します)
+    def random_bool(percent: float):
+        val = random.random()
+        return val <= percent
+
     # 基本ダメージからランダムな乗数を掛けたダメージを返します
     def random_damage(dmg: float, dmg_multiply: float):
         multi = random.uniform(-dmg_multiply, dmg_multiply)
@@ -33,6 +38,13 @@ class Util:
         if result < 0:
             result = 0.0
         return result
+
+    # 指定した方向ベクトルをランダムな角度に回転させます
+    def random_rotatevector(v, max_angle):
+        rot = random.uniform(-max_angle, max_angle)
+        vec = Vector2.rotate(v, rot)
+        return vec
+
 
 # 二次元ベクトルを表すクラス
 class Vector2:
@@ -77,8 +89,9 @@ class Vector2:
         rad = math.radians(angle)
         v = Vector2(0, 0)
         v.x = v1.x * math.cos(rad) - v1.y * math.sin(rad)
-        v.y = v1.y * math.cos(rad) - v1.y * math.cos(rad)
+        v.y = v1.x * math.sin(rad) + v1.y * math.cos(rad)
         return v
+
 
     # 移動方向と物体の方向から反射ベクトルを返します
     def get_reflection(v1, obj_angle: float):
@@ -220,7 +233,7 @@ class Pawn(Actor):
 class Bullet(Pawn):
     owner: Pawn = None  # 所有者(発砲者)
     pic: str = "ball_blue_small_2"  # 弾の画像
-    damage = 15
+    damage = 15  # 基本ダメージ
     direction = Vector2(0, 0)  # 弾の飛翔方向
     velocity: float = 0.0  # 飛翔速度
     is_bounce: bool = False  # 障害物や壁に反発するかどうか
@@ -283,6 +296,7 @@ class Weapon:
     fire_rate = 0.25  # 発射速度
     reload_time: float = 3.0  # 装填時間
     diffusion: float = 0.2  # 拡散値
+    max_diffangle: float = 30  # 最大拡散角度
     fire_mode: str = ""  # 発射モード
     FIRE_MODE_SINGLE = "single"  # トリガーを引いたら一発のみ発射する
     FIRE_MODE_AUTO = "auto"  # トリガーを引いている間ずっと連射する
@@ -298,37 +312,40 @@ class Weapon:
 
     # 弾を発射する
     def fire(self, at: Vector2):
-        if not self.is_reloading_:
-            if self.capacity_ > 0:
-                blt = Bullet(self.owner)
-                blt.damage = Util.random_damage(self.damage, self.damage_multiply)
-                blt.spawn(self.owner.world)
-                blt.location = Vector2.get_vector(self.owner.location)
-                direction = Vector2.get_angle2(self.owner.location, at)
-                direction = Vector2.get_direction_fromdeg(direction - 90)
-                blt.set_direction(direction)
-                self.capacity_ -= 1
-                sounds.handgun_shot.play()
+        if not self.is_reloading_:  # 装填中でなければ
+            if self.capacity_ > 0:  # 弾が残っていれば
+                blt = Bullet(self.owner)  # 弾オブジェクトの生成
+                blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
+                blt.spawn(self.owner.world)  # 弾をワールドに生成する
+                blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
+                direction = Vector2.get_angle2(self.owner.location, at)  # 弾の角度(発砲者とマウスカーソル位置のなす角度)
+                direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
+                if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
+                    direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
+                    print("Diffusion")
+                blt.set_direction(direction)  # 飛翔方向を設定
+                self.capacity_ -= 1  # 現在の装弾数を減らす
+                sounds.handgun_shot.play()  # 発砲音を鳴らす
                 pass
-            else:
-                sounds.handgun_empty.play()
+            else:  # 弾が残っていない時
+                sounds.handgun_empty.play()  # 空撃ち音を鳴らす
             pass
         pass
 
     # 弾の装填を行う
     def reload(self):
-        if not self.is_reloading_:
-            self.is_reloading_ = True
-            sounds.handgun_reload.play()
-            clock.schedule_unique(self.on_ended_reload, self.reload_time)
+        if not self.is_reloading_:  # 装填中でなければ
+            self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
+            sounds.handgun_reload.play()  # 装填音を鳴らす
+            clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
         pass
 
     # 装填が完了した際に呼ばれる
     def on_ended_reload(self):
         print("Reloaded")
-        sounds.handgun_slide.play()
-        self.capacity_ = self.capacity
-        self.is_reloading_ = False
+        sounds.handgun_slide.play()  # 銃スライド音を鳴らす
+        self.capacity_ = self.capacity  # 現在の装填数を補充する
+        self.is_reloading_ = False  # 装填中であるかどうかを設定する
 
 
 class HandGun(Weapon):
@@ -339,7 +356,8 @@ class HandGun(Weapon):
         self.capacity_ = self.capacity
         self.fire_rate = 0.5
         self.reload_time = 2.0
-        self.diffusion = 0.1
+        self.diffusion = 0.2
+        self.max_diffangle = 10
         self.fire_mode = self.FIRE_MODE_SINGLE
         pass
 
@@ -351,14 +369,14 @@ class HandGun(Weapon):
         return self
 
 
+# プレイヤー/敵共通のキャラクタークラス
 class Character(Pawn):
-    SkinPic: str = ""
-    HP = 100
-    Def_multiply: float = 0.0
-    CharacterMoveSpeed = 5
-    weapon: Weapon = None
-    hp_ = 0
-    is_hitting: bool = False
+    SkinPic: str = ""  # 外見の画像
+    HP = 100  # 最大ヒットポイント
+    Def_multiply: float = 0.0  # 防御乗数(ダメージの軽減率)
+    CharacterMoveSpeed = 5  # キャラクターの移動速度
+    weapon: Weapon = None  # キャラクターの所持している武器
+    hp_ = 0  # 現在のHP
 
     def __init__(self, pic_name: str):
         super().__init__(self.SkinPic)
@@ -465,10 +483,8 @@ class Enemy(Character):
 
     def on_hit(self, actor):
         super().on_hit(actor)
-        if not self.is_hitting:
-            blt: Bullet = actor
-            self.apply_damage(blt)
-            #self.is_hitting = True
+        blt: Bullet = actor
+        self.apply_damage(blt)
 
     def apply_damage(self, bullet: Bullet):
         super().apply_damage(bullet)
@@ -477,18 +493,19 @@ class Enemy(Character):
         if self.hp_ <= 0:
             self.destroy()
         print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
-        #self.is_hitting = False
 
 
 world = World()
 player = Player()
-#enemy = Enemy()
+enemy = Enemy()
 player.spawn(world)
-#enemy.spawn(world)
+enemy.spawn(world)
+"""
 for i in range(0, 600, 60):
     e = Enemy()
     e.location.x = i
     e.spawn(world)
+"""
 
 def draw():
     screen.clear()
