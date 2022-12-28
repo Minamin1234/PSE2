@@ -358,6 +358,7 @@ class Character(Pawn):
     CharacterMoveSpeed = 5
     weapon: Weapon = None
     hp_ = 0
+    is_hitting: bool = False
 
     def __init__(self, pic_name: str):
         super().__init__(self.SkinPic)
@@ -443,7 +444,6 @@ class Player(Character):
 
 # 敵クラス
 class Enemy(Character):
-    HP = 50
     IsLookAtTarget: bool = True
     target_: Pawn = None
 
@@ -451,11 +451,13 @@ class Enemy(Character):
         self.SkinPic = "manbrown_gun"
         super().__init__(self.SkinPic)
         self.HP = 50
+        self.Def_multiply = 0.5
         self.CharacterMoveSpeed = 5
         self.weapon = None
         self.isBlock = True
         self.isKeyInput = False
         self.target_ = None
+        self.hp_ = self.HP
 
     def update(self, dt):
         super().update(dt)
@@ -463,14 +465,30 @@ class Enemy(Character):
 
     def on_hit(self, actor):
         super().on_hit(actor)
-        print(f"hit: {actor}")
+        if not self.is_hitting:
+            blt: Bullet = actor
+            self.apply_damage(blt)
+            #self.is_hitting = True
+
+    def apply_damage(self, bullet: Bullet):
+        super().apply_damage(bullet)
+        dmg = Util.random_defenceddamage(bullet.damage, self.Def_multiply)
+        self.hp_ -= dmg
+        if self.hp_ <= 0:
+            self.destroy()
+        print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
+        #self.is_hitting = False
 
 
 world = World()
 player = Player()
-enemy = Enemy()
+#enemy = Enemy()
 player.spawn(world)
-enemy.spawn(world)
+#enemy.spawn(world)
+for i in range(0, 600, 60):
+    e = Enemy()
+    e.location.x = i
+    e.spawn(world)
 
 def draw():
     screen.clear()
