@@ -371,7 +371,6 @@ class HandGun(Weapon):
 
     def __init__(self, owner: Pawn):
         super().__init__(owner)
-        self.distance = 500000
         self.capacity = 6
         self.capacity_ = self.capacity
         self.fire_rate = 0.5
