@@ -387,6 +387,7 @@ class HandGun(Weapon):
         super().reload()
         return self
 
+
 # ゲーム内に配置可能な静的オブジェクト
 class StaticObject(Pawn):
     Pic: str = ""
@@ -399,8 +400,8 @@ class StaticObject(Pawn):
 
 # 地面/タイルのクラス
 class Ground(StaticObject):
-    def __init__(self):
-        self.Pic = "tile_01"
+    def __init__(self, pic: str):
+        self.Pic = pic
         super().__init__(self.Pic)
 
 
@@ -411,8 +412,7 @@ class Floor(StaticObject):
         super().__init__(self.Pic)
 
 
-# 壁クラス
-class Wall(StaticObject):
+class WallStyle:
     wall_up = ""
     wall_down = ""
     wall_left = ""
@@ -427,7 +427,31 @@ class Wall(StaticObject):
     wall_joint_donwright = ""
 
     def __init__(self):
-        self.Pic = ""
+        pass
+
+
+class WallStyleOrange(WallStyle):
+    def __init__(self):
+        super().__init__()
+        self.wall_up = "wall_orange_up"
+        self.wall_down = "wall_orange_down"
+        self.wall_left = "wall_orange_left"
+        self.wall_right = "wall_orange_right"
+        self.wall_corner_upleft = "wall_orange_corner_upleft"
+        self.wall_corner_upright = "wall_orange_corner_upright"
+        self.wall_corner_downleft = "wall_orange_corner_downleft"
+        self.wall_corner_downright = "wall_orange_corner_downright"
+        self.wall_joint_upleft = "wall_orange_joint_upleft"
+        self.wall_joint_upright = "wall_orange_joint_upright"
+        self.wall_joint_downleft = "wall_orange_joint_downleft"
+        self.wall_joint_donwright = "wall_orange_joint_downright"
+        pass
+
+
+# 壁クラス
+class Wall(StaticObject):
+    def __init__(self, pic):
+        self.Pic = pic
         super().__init__(self.Pic)
 
 
@@ -452,9 +476,9 @@ class Map:
     ground_map: list = []  # 地面配置マップ
     ground_style_map: list = []  # 地面スタイルマップ
     ground_styles: list = []  # 地面スタイル一覧
-    obj_map: list = []  # オブジェクト配置マップ
-    obj_style_map: list = []  # オブジェクト種類マップ
-    obj_styles: list = []  # オブジェクト一覧
+    wallobj_map: list[list[Wall]] = []  # オブジェクト配置マップ
+    wallobj_style_map: list[list[int]] = []  # オブジェクト種類マップ
+    wallobj_styles: list[WallStyle] = []  # オブジェクト一覧
     size_: Vector2 = Vector2(10, 10)  # マップサイズ
     map_: list = []
 
@@ -464,6 +488,67 @@ class Map:
 
     # マップを生成します
     def generate(self):
+        # 地面の生成と配置
+        for y in range(0, self.size_.y):
+            for x in range(0, self.size_.x):
+                if self.ground_map[y][x] == G:
+                    style = self.ground_styles[self.ground_style_map[y][x]]
+                    ground = Ground(style)
+                    ground.location.x = (ground.width * 0.5) + ground.width * x
+                    ground.location.y = (ground.height * 0.5) + ground.height * y
+                    print(ground.location)
+                    ground.spawn(self.world)
+
+        # 物体の生成と配置
+        for y in range(0, self.size_.y):
+            for x in range(0, self.size_.x):
+                obj_type = self.wallobj_map[y][x]
+                obj: Wall = None
+                objstyle = self.wallobj_styles[self.wallobj_style_map[y][x]]
+                if obj_type == N:
+                    continue
+                if obj_type == U:
+                    obj = Wall(objstyle.wall_up)
+                    pass
+                elif obj_type == D:
+                    obj = Wall(objstyle.wall_down)
+                    pass
+                elif obj_type == L:
+                    obj = Wall(objstyle.wall_left)
+                    pass
+                elif obj_type == R:
+                    obj = Wall(objstyle.wall_right)
+                    pass
+                elif obj_type == JUL:
+                    obj = Wall(objstyle.wall_joint_upleft)
+                    pass
+                elif obj_type == JUR:
+                    obj = Wall(objstyle.wall_joint_upright)
+                    pass
+                elif obj_type == JDL:
+                    obj = Wall(objstyle.wall_joint_downleft)
+                    pass
+                elif obj_type == JDR:
+                    obj = Wall(objstyle.wall_joint_donwright)
+                    pass
+                elif obj_type == CUL:
+                    obj = Wall(objstyle.wall_corner_upleft)
+                    pass
+                elif obj_type == CUR:
+                    obj = Wall(objstyle.wall_corner_upright)
+                    pass
+                elif obj_type == CDL:
+                    obj = Wall(objstyle.wall_corner_downleft)
+                    pass
+                elif obj_type == CDR:
+                    obj = Wall(objstyle.wall_corner_downright)
+                    pass
+                pass
+                obj.location.x = obj.width * x
+                obj.location.y = obj.height * y
+                obj.spawn(self.world)
+
+        """
         for y in range(0, self.size_.y):
             for x in range(0, self.size_.x):
                 g = Ground()
@@ -472,6 +557,7 @@ class Map:
                 print(g.location)
                 g.spawn(self.world)
                 self.map_.append(g)
+        """
 
 
 # プレイヤー/敵共通のキャラクタークラス
@@ -600,8 +686,96 @@ class Enemy(Character):
         print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
 
 
+groundmap = [
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+]
+
+groundstylemap = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+groundstyles = [
+    "tile_01",
+    "tile_05"
+]
+
+wallmap = [
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, L, R, N, U, CUL, CUR, N, N, N, N, N],
+    [N, N, N, N, N, N, N, D, CDL, CDR, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
+]
+
+wallstylemap = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+wallstyles = [
+    WallStyleOrange()
+]
+
 world = World()
 mp = Map(world)
+mp.size_ = Vector2(15, 15)
+mp.ground_map = groundmap
+mp.ground_style_map = groundstylemap
+mp.ground_styles = groundstyles
+mp.wallobj_map = wallmap
+mp.wallobj_style_map = wallstylemap
+mp.wallobj_styles = wallstyles
 mp.generate()
 player = Player()
 enemy = Enemy()
