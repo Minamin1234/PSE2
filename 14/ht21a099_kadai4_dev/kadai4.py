@@ -275,6 +275,11 @@ class Bullet(Pawn):
         self.direction = direction
         pass
 
+    def bounce(self):
+        if self.bounces_ >= self.bounces:
+            self.destroy()
+        self.bounces_ += 1
+
     def update(self, dt):
         super().update(dt)
 
@@ -282,9 +287,7 @@ class Bullet(Pawn):
             if self.hit_once:
                 self.destroy()
             if self.is_bounce:
-                if self.bounces_ >= self.bounces:
-                    self.destroy()
-                self.bounces_ += 1
+                self.bounce()
 
         if self.collide[self.LEFT] or self.collide[self.RIGHT]:
             self.direction.x = -self.direction.x
@@ -292,10 +295,13 @@ class Bullet(Pawn):
             self.direction.y = -self.direction.y
         hits = self.is_hit()
         for p in hits:
-            if p != self.owner and type(p) is not StaticObject:
+            if p != self.owner and type(p) is not Ground:
                 p.on_hit(self)
                 if self.hit_once:
                     self.destroy()
+                if type(p) is Wall:
+                    self.direction = -self.direction
+                    self.bounce()
 
         self.location.x += self.direction.x * self.velocity
         self.location.y += self.direction.y * self.velocity
@@ -408,7 +414,7 @@ class Ground(StaticObject):
 
 
 # 床のクラス
-class Floor(StaticObject):
+class Floor(Ground):
     def __init__(self):
         self.Pic = ""
         super().__init__(self.Pic)
@@ -585,7 +591,6 @@ class Character(Pawn):
                 direction = -direction
                 self.location.x += direction.x * self.CharacterMoveSpeed
                 self.location.y += direction.y * self.CharacterMoveSpeed
-                print("collide")
         self.location.x += self.moveInput.x * self.CharacterMoveSpeed
         self.location.y += self.moveInput.y * -self.CharacterMoveSpeed
 
