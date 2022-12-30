@@ -162,6 +162,7 @@ class Pawn(Actor):
     isKeyInput: bool = False  # キー入力を有効にするかどうか
     moveInput: Vector2 = Vector2(0, 0)  # 入力
     collide = False, False, False, False  # 現在、壁に衝突しているかどうか
+    collideobjects_ = []  # 現在衝突しているオブジェクト一覧
 
     def __init__(self, pic_name):
         super().__init__(pic_name)
@@ -238,6 +239,7 @@ class Pawn(Actor):
                 continue
             if p.colliderect(self):
                 hits.append(p)
+        self.collideobjects_ = hits
         return hits
 
     # Pawn同士で衝突した際に呼ばれます
@@ -476,9 +478,9 @@ class Map:
     ground_map: list = []  # 地面配置マップ
     ground_style_map: list = []  # 地面スタイルマップ
     ground_styles: list = []  # 地面スタイル一覧
-    wallobj_map: list[list[Wall]] = []  # オブジェクト配置マップ
-    wallobj_style_map: list[list[int]] = []  # オブジェクト種類マップ
-    wallobj_styles: list[WallStyle] = []  # オブジェクト一覧
+    wallobj_map = []  # オブジェクト配置マップ
+    wallobj_style_map = []  # オブジェクト種類マップ
+    wallobj_styles = []  # オブジェクト一覧
     size_: Vector2 = Vector2(10, 10)  # マップサイズ
     map_: list = []
 
@@ -575,6 +577,15 @@ class Character(Pawn):
 
     def update(self, dt):
         super().update(dt)
+        self.is_hit()
+        for obj in self.collideobjects_:
+            if type(obj) is Wall:
+                self.moveInput = Vector2(0, 0)
+                direction = Vector2.get_direction(obj.location, self.location)
+                direction = -direction
+                self.location.x += direction.x * self.CharacterMoveSpeed
+                self.location.y += direction.y * self.CharacterMoveSpeed
+                print("collide")
         self.location.x += self.moveInput.x * self.CharacterMoveSpeed
         self.location.y += self.moveInput.y * -self.CharacterMoveSpeed
 
