@@ -5,8 +5,8 @@ import random
 import pygame.mouse
 from pse2pgzrun import *  # type: ignore
 
-WIDTH = 750
-HEIGHT = 750
+WIDTH = 1250
+HEIGHT = 850
 
 class Util:
 
@@ -51,28 +51,35 @@ class Vector2:
     x: float = 0.0
     y: float = 0.0
 
+    # ベクトルから新たにインスタンスを作成します
     def get_vector(v):
         return Vector2(v.x, v.y)
 
+    # xとyからベクトルを作成します
     def __init__(self, x: float, y: float):
         self.x, self.y = x, y
 
+    # 加算演算子の定義(ベクトル同士の足し算)
     def __add__(self, other):
         v = Vector2(self.x + other.x, self.y + other.y)
         return v
 
+    # -演算子の定義(各要素の反転)
     def __neg__(self):
         v = Vector2(-self.x, -self.y)
         return v
 
+    # 乗算演算子の定義(スカラー倍)
     def __mul__(self, other):
         v = Vector2(self.x * other, self.y * other)
         return v
 
+    # +=演算子の定義(ベクトル同士の加算)
     def __iadd__(self, other):
         v = Vector2(self.x + other.x, self.y + other.y)
         return v
 
+    # ベクトルの文字列化
     def __str__(self):
         return f"({self.x}, {self.y})"
 
@@ -131,7 +138,6 @@ class Vector2:
         v.y = v1.x * math.sin(rad) + v1.y * math.cos(rad)
         return v
 
-
     # 移動方向と物体の方向から反射ベクトルを返します
     def get_reflection(v1, obj_angle: float):
         obj_angle = abs(obj_angle)
@@ -143,8 +149,8 @@ class Vector2:
 
 # ゲーム内全てのオブジェクトを管理するためのクラス
 class World:
-    Pawns = []
-    Map = None
+    Pawns = []  # ワールド内のオブジェクト
+    Map = None  # ワールドのマップ
 
     def __init__(self):
         pass
@@ -175,6 +181,7 @@ class World:
             return
         self.Pawns.remove(pawn)
 
+    # マップを設定します
     def set_map(self, newmap):
         self.Map = newmap
 
@@ -294,7 +301,7 @@ class Bullet(Pawn):
 
     def __init__(self, owner: Pawn):
         super().__init__(self.pic)
-        self.isBlock = True
+        self.isBlock = False
         self.isKeyInput = False
         self.is_bounce = True
         self.bounces = 2
@@ -314,16 +321,28 @@ class Bullet(Pawn):
     def update(self, dt):
         super().update(dt)
 
-        if self.is_collide_wall():
-            if self.hit_once:
-                self.destroy()
-            if self.is_bounce:
-                self.bounce()
-
-        if self.collide[self.LEFT] or self.collide[self.RIGHT]:
+        worldpos = self.world.Map.get_worldlocation(self.location)
+        world_width = self.world.Map.width_
+        world_height = self.world.Map.height_
+        if worldpos.x >= world_width:
             self.direction.x = -self.direction.x
-        if self.collide[self.UP] or self.collide[self.DOWN]:
+            self.bounce()
+        if worldpos.x <= 0:
+            self.direction.x = -self.direction.x
+            self.bounce()
+        if worldpos.y >= world_height:
             self.direction.y = -self.direction.y
+            self.bounce()
+        if worldpos.y <= 0:
+            self.direction.y = -self.direction.y
+            self.bounce()
+
+        if self.isBlock:
+            if self.collide[self.LEFT] or self.collide[self.RIGHT]:
+                self.direction.x = -self.direction.x
+            if self.collide[self.UP] or self.collide[self.DOWN]:
+                self.direction.y = -self.direction.y
+
         hits = self.is_hit()
         for p in hits:
             if p != self.owner and type(p) is not Ground:
@@ -336,8 +355,6 @@ class Bullet(Pawn):
 
         self.location.x += self.direction.x * self.velocity
         self.location.y += self.direction.y * self.velocity
-
-
 
 
 # 武器クラス
@@ -452,6 +469,7 @@ class Floor(Ground):
         super().__init__(self.Pic)
 
 
+# 壁障害物の種類とそれに対応する画像ファイル名の定義をまとめたクラス
 class WallStyle:
     wall_up = ""
     wall_down = ""
@@ -470,6 +488,7 @@ class WallStyle:
         pass
 
 
+# オレンジ色の壁障害物
 class WallStyleOrange(WallStyle):
     def __init__(self):
         super().__init__()
@@ -495,6 +514,7 @@ class Wall(StaticObject):
         super().__init__(self.Pic)
 
 
+# マップに配置する種類を表す定数
 N = 0  # None
 G = 1  # Ground
 U = 1  # Up
@@ -539,9 +559,11 @@ class Character(Pawn):
     def mouse_down_input(self, pos):
         pass
 
+    # オブジェクト同士で衝突があった時に呼ばれる
     def on_hit(self, actor):
         pass
 
+    # 弾によるダメージが適用される際に呼ばれる
     def apply_damage(self, bullet: Bullet):
         pass
     
@@ -577,13 +599,28 @@ class Player(Character):
         pressed_r = False
         super().key_input(keys)
         if keys.right or keys.d:
-            self.moveInput.x = 1
+            if keys.left or keys.a:
+                self.moveInput.x = 0
+            else:
+                self.moveInput.x = 1
+
         if keys.left or keys.a:
-            self.moveInput.x = -1
+            if keys.right or keys.d:
+                self.moveInput.x = 0
+            else:
+                self.moveInput.x = -1
+
         if keys.up or keys.w:
-            self.moveInput.y = 1
+            if keys.down or keys.s:
+                self.moveInput.y = 0
+            else:
+                self.moveInput.y = 1
+
         if keys.down or keys.s:
-            self.moveInput.y = -1
+            if keys.up or keys.w:
+                self.moveInput.y = 0
+            else:
+                self.moveInput.y = -1
 
         if keys.r:
             if not pressed_r:
@@ -609,7 +646,7 @@ class Player(Character):
         self.apply_damage(blt)
 
     def apply_damage(self, bullet: Bullet):
-        self.hp_ -= Util.random_defenceddamage(bullet.damagem, self.Def_multiply)
+        self.hp_ -= Util.random_defenceddamage(bullet.damage, self.Def_multiply)
         if self.hp_ <= 0:
             self.destroy()
 
@@ -651,6 +688,7 @@ class Enemy(Character):
         print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
 
 
+# ワールド内を構成するマップクラス
 class Map:
     player: Player = None  # プレイヤー
     world: World = None  # マップを生成するワールド
@@ -663,9 +701,9 @@ class Map:
     width_: float = 0  # マップの横幅
     height_: float = 0  # マップの縦
     size_: Vector2 = Vector2(10, 10)  # マップサイズ(タイル数)
-    map_: list = []
-    objs_: list = []
-    center_: Vector2 = Vector2(0, 0)
+    map_: list = []  # マップ内に配置されているオブジェクト一覧(地面)
+    objs_: list = []  # マップ内に配置されているオブジェクト一覧(壁/障害物)
+    center_: Vector2 = Vector2(0, 0)  # 画面の中心
     location_diff_: Vector2 = Vector2(0, 0) # 現在のマップの相対位置
 
     def __init__(self, world: World, player):
@@ -769,26 +807,48 @@ class Map:
         diff = Vector2(0, 0)
         diff.x = -moveinput.x * self.player.CharacterMoveSpeed
         diff.y = moveinput.y * self.player.CharacterMoveSpeed
-        map_origin = Vector2.get_vector(self.map_[0].location)
-        map_origin.x = map_origin.x - (self.map_[0].width / 2)
-        map_origin.y = map_origin.y - (self.map_[0].height / 2)
-        playerpos = Vector2(0, 0)
-        playerpos.x = self.center_.x - map_origin.x
-        playerpos.y = self.center_.y - map_origin.y
+        playerpos = self.get_worldlocation(self.center_)
         if playerpos.x >= self.width_:
             self.move_map(-diff * 3)
-            diff = Vector2.rotate(diff, -90)
+            #diff = Vector2.rotate(-diff, -90)
+            #self.move_map(diff)
             diff.x = 0
         if playerpos.x <= 0:
             self.move_map(-diff * 3)
-            diff = Vector2.rotate(diff, -90)
+            #diff = Vector2.rotate(-diff, -90)
+            #self.move_map(diff)
             diff.x = 0
-        print(playerpos)
+        if playerpos.y >= self.height_:
+            self.move_map(-diff * 3)
+            #diff = Vector2.rotate(-diff, -90)
+            #self.move_map(diff)
+            diff.y = 0
+        if playerpos.y <= 0:
+            self.move_map(-diff * 3)
+            #diff = Vector2.rotate(-diff, -90)
+            #self.move_map(diff)
+            diff.y = 0
         self.move_map(diff)
         self.player.location = Vector2.get_vector(self.center_)
         pass
 
+    # マップの原点を取得します
+    def get_maporigin(self):
+        map_origin = Vector2.get_vector(self.map_[0].location)
+        map_origin.x = map_origin.x - (self.map_[0].width / 2)
+        map_origin.y = map_origin.y - (self.map_[0].height / 2)
+        return map_origin
 
+    # 画面座標からワールド位置に変換します。
+    def get_worldlocation(self, displaypos: Vector2):
+        origin = self.get_maporigin()
+        pos = Vector2(0, 0)
+        pos.x = displaypos.x - origin.x
+        pos.y = displaypos.y - origin.y
+        return pos
+
+
+# 地面オブジェクトの配置
 groundmap = [
     [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
     [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
@@ -807,6 +867,7 @@ groundmap = [
     [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
 ]
 
+# 地面のスタイル割り当て
 groundstylemap = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -825,11 +886,13 @@ groundstylemap = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
+# 割り当てと使用する地面画像一覧
 groundstyles = [
     "tile_01",
     "tile_05"
 ]
 
+# 壁障害物の配置
 wallmap = [
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
     [N, N, N, N, L, R, N, U, CUL, CUR, N, N, N, N, N],
@@ -848,6 +911,7 @@ wallmap = [
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
 ]
 
+# 壁障害物の種類の割り当て
 wallstylemap = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -866,6 +930,7 @@ wallstylemap = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
+# 割り当てとその使用する種類
 wallstyles = [
     WallStyleOrange()
 ]
