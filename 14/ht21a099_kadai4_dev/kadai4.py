@@ -57,6 +57,10 @@ class Vector2:
     def __init__(self, x: float, y: float):
         self.x, self.y = x, y
 
+    def __add__(self, other):
+        v = Vector2(self.x + other.x, self.y + other.y)
+        return v
+
     def __neg__(self):
         v = Vector2(-self.x, -self.y)
         return v
@@ -72,11 +76,32 @@ class Vector2:
     def __str__(self):
         return f"({self.x}, {self.y})"
 
+    # ベクトルの長さを返します。
+    def get_vectorlength(v):
+        return math.sqrt(v.x**2 + v.y**2)
+
+    # 正規化したベクトルを返します。
+    def normalize(v):
+        vec = Vector2(0, 0)
+        length = Vector2.get_vectorlength(v)
+        if length == 0:
+            return Vector2(v.x, v.y)
+        vec.x = v.x / length
+        vec.y = v.y / length
+        return vec
+
     # 2点間の距離の二乗を返します
     def get_distance2(a, b):
         x = b.x - a.x
         y = b.y - a.y
         return x**2 + y**2
+
+    # 2点間の距離を返します
+    def get_distance(a, b):
+        x = b.x - a.x
+        y = b.y - a.y
+        xy = x**2 + y**2
+        return math.sqrt(xy)
 
     # 二つのベクトルをなす角度を返します(度数)
     def get_angle2(a, b):
@@ -119,14 +144,16 @@ class Vector2:
 # ゲーム内全てのオブジェクトを管理するためのクラス
 class World:
     Pawns = []
+    Map = None
 
     def __init__(self):
         pass
 
-    # ワールド内全てのオブジェクトを更新します
+    # ワールド内全てのオブジェクトとマップを更新します
     def update(self, dt):
         for p in self.Pawns:
             p.update(dt)
+        self.Map.update(dt)
 
     # ワールド内全てのオブジェクトの描画処理を呼び出します
     def draw(self):
@@ -148,6 +175,9 @@ class World:
             return
         self.Pawns.remove(pawn)
 
+    def set_map(self, newmap):
+        self.Map = newmap
+
 
 # ゲーム内で配置/移動可能なオブジェクトクラス
 class Pawn(Actor):
@@ -167,6 +197,7 @@ class Pawn(Actor):
     def __init__(self, pic_name):
         super().__init__(pic_name)
         self.location = Vector2(self.x, self.y)
+        self.moveInput = Vector2(0, 0)
 
     # 指定したワールドに出現させます
     def spawn(self, world: World):
@@ -399,6 +430,7 @@ class HandGun(Weapon):
 # ゲーム内に配置可能な静的オブジェクト
 class StaticObject(Pawn):
     Pic: str = ""
+    initiallocation: Vector2 = Vector2(0, 0)
 
     def __init__(self, pic: str):
         self.Pic = pic
@@ -479,7 +511,148 @@ CDL = 11  # Corner_downleft
 CDR = 12  # Corner_downright
 
 
+# プレイヤー/敵共通のキャラクタークラス
+class Character(Pawn):
+    SkinPic: str = ""  # 外見の画像
+    HP = 100  # 最大ヒットポイント
+    Def_multiply: float = 0.0  # 防御乗数(ダメージの軽減率)
+    CharacterMoveSpeed = 5  # キャラクターの移動速度
+    weapon: Weapon = None  # キャラクターの所持している武器
+    hp_ = 0  # 現在のHP
+
+    def __init__(self, pic_name: str):
+        super().__init__(self.SkinPic)
+        pass
+
+    def update(self, dt):
+        super().update(dt)
+        self.is_hit()
+        for obj in self.collideobjects_:
+            if type(obj) is Wall:
+                direction = Vector2.get_direction(self.location, obj.location)
+                direction = -direction
+                direction = Vector2.rotate(direction, -90)
+                self.moveInput = direction
+
+
+
+    def mouse_down_input(self, pos):
+        pass
+
+    def on_hit(self, actor):
+        pass
+
+    def apply_damage(self, bullet: Bullet):
+        pass
+    
+    def key_input(self, keys):
+        super().key_input(keys)
+
+
+# プレイヤー
+class Player(Character):
+
+    def __init__(self):
+        self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
+        super().__init__(self.SkinPic)
+        self.HP = 100
+        self.CharacterMoveSpeed = 5
+        self.isBlock = True
+        self.isKeyInput = True
+        self.weapon = HandGun(self)
+        self.Def_multiply = 0.5
+        self.hp_ = self.HP
+
+    def update(self, dt):
+        super().update(dt)
+
+        mousepos = Vector2(0, 0)
+        mousepos.x, mousepos.y = pygame.mouse.get_pos()
+
+        lookat = Vector2.get_angle2(self.location, mousepos)
+        self.angle = -lookat
+        #print(f"player: {self.moveInput},{id(self.moveInput)}")
+
+    def key_input(self, keys):
+        pressed_r = False
+        super().key_input(keys)
+        if keys.right or keys.d:
+            self.moveInput.x = 1
+        if keys.left or keys.a:
+            self.moveInput.x = -1
+        if keys.up or keys.w:
+            self.moveInput.y = 1
+        if keys.down or keys.s:
+            self.moveInput.y = -1
+
+        if keys.r:
+            if not pressed_r:
+                self.weapon.reload()
+            pressed_r = True
+        else:
+            pressed_r = False
+
+    def mouse_down_input(self, pos):
+        super().mouse_down_input(pos)
+        mousepos = Vector2(pos[0], pos[1])
+        """print("Pawns(Before):")
+        for i in self.world.Pawns:
+            print(i)"""
+        self.weapon.fire(mousepos)
+        """print("Pawns(After):")
+        for i in self.world.Pawns:
+            print(i)"""
+        print(f"capacity: {self.weapon.capacity_}")
+
+    def on_hit(self, actor):
+        blt: Bullet = actor
+        self.apply_damage(blt)
+
+    def apply_damage(self, bullet: Bullet):
+        self.hp_ -= Util.random_defenceddamage(bullet.damagem, self.Def_multiply)
+        if self.hp_ <= 0:
+            self.destroy()
+
+        pass
+
+
+# 敵クラス
+class Enemy(Character):
+    IsLookAtTarget: bool = True
+    target_: Pawn = None
+
+    def __init__(self):
+        self.SkinPic = "manbrown_gun"
+        super().__init__(self.SkinPic)
+        self.HP = 50
+        self.Def_multiply = 0.5
+        self.CharacterMoveSpeed = 5
+        self.weapon = None
+        self.isBlock = False
+        self.isKeyInput = False
+        self.target_ = None
+        self.hp_ = self.HP
+
+    def update(self, dt):
+        super().update(dt)
+        pass
+
+    def on_hit(self, actor):
+        super().on_hit(actor)
+        blt: Bullet = actor
+        self.apply_damage(blt)
+
+    def apply_damage(self, bullet: Bullet):
+        super().apply_damage(bullet)
+        dmg = Util.random_defenceddamage(bullet.damage, self.Def_multiply)
+        self.hp_ -= dmg
+        if self.hp_ <= 0:
+            self.destroy()
+        print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
+
+
 class Map:
+    player: Player = None  # プレイヤー
     world: World = None  # マップを生成するワールド
     ground_map: list = []  # 地面配置マップ
     ground_style_map: list = []  # 地面スタイルマップ
@@ -487,11 +660,40 @@ class Map:
     wallobj_map = []  # オブジェクト配置マップ
     wallobj_style_map = []  # オブジェクト種類マップ
     wallobj_styles = []  # オブジェクト一覧
-    size_: Vector2 = Vector2(10, 10)  # マップサイズ
+    width_: float = 0  # マップの横幅
+    height_: float = 0  # マップの縦
+    size_: Vector2 = Vector2(10, 10)  # マップサイズ(タイル数)
     map_: list = []
+    objs_: list = []
+    center_: Vector2 = Vector2(0, 0)
+    location_diff_: Vector2 = Vector2(0, 0) # 現在のマップの相対位置
 
-    def __init__(self, world: World):
+    def __init__(self, world: World, player):
         self.world = world
+        self.player = player
+        self.center_.x = WIDTH / 2
+        self.center_.y = HEIGHT / 2
+        self.width_ = 0
+        self.height_ = 0
+        pass
+
+    # マップ内の全オブジェクトを移動させます
+    def move_map(self, newlocation: Vector2):
+        self.location_diff_ = Vector2.get_vector(newlocation)
+        for obj in self.world.Pawns:
+            if type(obj) == StaticObject:
+                obj.location = obj.initiallocation + self.location_diff_
+            elif type(obj) == Player:
+                continue
+            else:
+                obj.location = obj.location + self.location_diff_
+            #print(newlocation)
+            #obj.location = obj.initiallocation + self.location_diff_
+        """
+        for obj in self.map_:
+            obj.location = obj.initiallocation + self.location_diff_
+        for obj in self.objs_:
+            obj.location = obj.initiallocation + self.location_diff_"""
         pass
 
     # マップを生成します
@@ -504,8 +706,12 @@ class Map:
                     ground = Ground(style)
                     ground.location.x = (ground.width * 0.5) + ground.width * x
                     ground.location.y = (ground.height * 0.5) + ground.height * y
-                    print(ground.location)
+                    ground.initiallocation = Vector2.get_vector(ground.location)
                     ground.spawn(self.world)
+                    self.map_.append(ground)
+
+        self.width_ = self.map_[0].width * self.size_.x
+        self.height_ = self.map_[0].height * self.size_.y
 
         # 物体の生成と配置
         for y in range(0, self.size_.y):
@@ -554,152 +760,33 @@ class Map:
                 pass
                 obj.location.x = obj.width * x
                 obj.location.y = obj.height * y
+                obj.initiallocation = Vector2.get_vector(obj.location)
                 obj.spawn(self.world)
-
-        """
-        for y in range(0, self.size_.y):
-            for x in range(0, self.size_.x):
-                g = Ground()
-                g.location.x = g.width * x
-                g.location.y = g.height * y
-                print(g.location)
-                g.spawn(self.world)
-                self.map_.append(g)
-        """
-
-
-# プレイヤー/敵共通のキャラクタークラス
-class Character(Pawn):
-    SkinPic: str = ""  # 外見の画像
-    HP = 100  # 最大ヒットポイント
-    Def_multiply: float = 0.0  # 防御乗数(ダメージの軽減率)
-    CharacterMoveSpeed = 5  # キャラクターの移動速度
-    weapon: Weapon = None  # キャラクターの所持している武器
-    hp_ = 0  # 現在のHP
-
-    def __init__(self, pic_name: str):
-        super().__init__(self.SkinPic)
-        pass
+                self.objs_.append(obj)
 
     def update(self, dt):
-        super().update(dt)
-        self.is_hit()
-        for obj in self.collideobjects_:
-            if type(obj) is Wall:
-                self.moveInput = Vector2(0, 0)
-                direction = Vector2.get_direction(obj.location, self.location)
-                direction = -direction
-                self.location.x += direction.x * self.CharacterMoveSpeed
-                self.location.y += direction.y * self.CharacterMoveSpeed
-        self.location.x += self.moveInput.x * self.CharacterMoveSpeed
-        self.location.y += self.moveInput.y * -self.CharacterMoveSpeed
-
-    def mouse_down_input(self, pos):
+        moveinput = self.player.moveInput
+        diff = Vector2(0, 0)
+        diff.x = -moveinput.x * self.player.CharacterMoveSpeed
+        diff.y = moveinput.y * self.player.CharacterMoveSpeed
+        map_origin = Vector2.get_vector(self.map_[0].location)
+        map_origin.x = map_origin.x - (self.map_[0].width / 2)
+        map_origin.y = map_origin.y - (self.map_[0].height / 2)
+        playerpos = Vector2(0, 0)
+        playerpos.x = self.center_.x - map_origin.x
+        playerpos.y = self.center_.y - map_origin.y
+        if playerpos.x >= self.width_:
+            self.move_map(-diff * 3)
+            diff = Vector2.rotate(diff, -90)
+            diff.x = 0
+        if playerpos.x <= 0:
+            self.move_map(-diff * 3)
+            diff = Vector2.rotate(diff, -90)
+            diff.x = 0
+        print(playerpos)
+        self.move_map(diff)
+        self.player.location = Vector2.get_vector(self.center_)
         pass
-
-    def on_hit(self, actor):
-        pass
-
-    def apply_damage(self, bullet: Bullet):
-        pass
-    
-    def key_input(self, keys):
-        super().key_input(keys)
-
-
-# プレイヤー
-class Player(Character):
-
-    def __init__(self):
-        self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
-        super().__init__(self.SkinPic)
-        self.HP = 100
-        self.CharacterMoveSpeed = 5
-        self.isBlock = True
-        self.isKeyInput = True
-        self.weapon = HandGun(self)
-        self.Def_multiply = 0.5
-        self.hp_ = self.HP
-
-    def update(self, dt):
-        super().update(dt)
-
-        mousepos = Vector2(0, 0)
-        mousepos.x, mousepos.y = pygame.mouse.get_pos()
-
-        lookat = Vector2.get_angle2(self.location, mousepos)
-        self.angle = -lookat
-
-    def key_input(self, keys):
-        pressed_r = False
-        super().key_input(keys)
-        if keys.right or keys.d:
-            self.moveInput.x = 1
-        if keys.left or keys.a:
-            self.moveInput.x = -1
-        if keys.up or keys.w:
-            self.moveInput.y = 1
-        if keys.down or keys.s:
-            self.moveInput.y = -1
-
-        if keys.r:
-            if not pressed_r:
-                self.weapon.reload()
-            pressed_r = True
-        else:
-            pressed_r = False
-
-    def mouse_down_input(self, pos):
-        super().mouse_down_input(pos)
-        mousepos = Vector2(pos[0], pos[1])
-        self.weapon.fire(mousepos)
-        print(f"capacity: {self.weapon.capacity_}")
-
-    def on_hit(self, actor):
-        blt: Bullet = actor
-        self.apply_damage(blt)
-
-    def apply_damage(self, bullet: Bullet):
-        self.hp_ -= Util.random_defenceddamage(bullet.damagem, self.Def_multiply)
-        if self.hp_ <= 0:
-            self.destroy()
-
-        pass
-
-
-# 敵クラス
-class Enemy(Character):
-    IsLookAtTarget: bool = True
-    target_: Pawn = None
-
-    def __init__(self):
-        self.SkinPic = "manbrown_gun"
-        super().__init__(self.SkinPic)
-        self.HP = 50
-        self.Def_multiply = 0.5
-        self.CharacterMoveSpeed = 5
-        self.weapon = None
-        self.isBlock = True
-        self.isKeyInput = False
-        self.target_ = None
-        self.hp_ = self.HP
-
-    def update(self, dt):
-        super().update(dt)
-        pass
-
-    def on_hit(self, actor):
-        super().on_hit(actor)
-        blt: Bullet = actor
-        self.apply_damage(blt)
-
-    def apply_damage(self, bullet: Bullet):
-        super().apply_damage(bullet)
-        dmg = Util.random_defenceddamage(bullet.damage, self.Def_multiply)
-        self.hp_ -= dmg
-        if self.hp_ <= 0:
-            self.destroy()
-        print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
 
 
 groundmap = [
@@ -784,7 +871,9 @@ wallstyles = [
 ]
 
 world = World()
-mp = Map(world)
+player = Player()
+
+mp = Map(world, player)
 mp.size_ = Vector2(15, 15)
 mp.ground_map = groundmap
 mp.ground_style_map = groundstylemap
@@ -793,11 +882,14 @@ mp.wallobj_map = wallmap
 mp.wallobj_style_map = wallstylemap
 mp.wallobj_styles = wallstyles
 mp.generate()
-player = Player()
+print(f"width: {mp.width_}, height: {mp.height_}")
+world.set_map(mp)
+
+player.location = Vector2.get_vector(mp.center_)
 enemy = Enemy()
 enemy.location = Vector2(150, 150)
-player.spawn(world)
 enemy.spawn(world)
+player.spawn(world)
 """
 for i in range(0, 600, 60):
     e = Enemy()
