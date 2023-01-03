@@ -953,6 +953,8 @@ class Map:
         #print(pos)
         return pos
 
+# マップサイズ
+mapsize = Vector2(15, 15)
 
 # 地面オブジェクトの配置
 groundmap = [
@@ -1045,7 +1047,7 @@ world = World()
 player = Player()
 
 mp = Map(world, player)
-mp.size_ = Vector2(15, 15)
+mp.size_ = mapsize
 mp.ground_map = groundmap
 mp.ground_style_map = groundstylemap
 mp.ground_styles = groundstyles
@@ -1061,12 +1063,7 @@ enemy = Enemy()
 enemy.location = Vector2(150, 150)
 enemy.spawn(world)
 player.spawn(world)
-"""
-for i in range(0, 600, 60):
-    e = Enemy()
-    e.location.x = i
-    e.spawn(world)
-"""
+
 
 def draw():
     screen.clear()
