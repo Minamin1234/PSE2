@@ -377,30 +377,35 @@ class Weapon:
     FIRE_MODE_SHOT = "shot"  # 一度に弾を複数発射する
     capacity_: int = 0  # 現在の弾数
     is_reloading_: bool = False  # 現在装填中かどうか
+    is_ready: bool = True  # 発射可能かどうか
 
     def __init__(self, owner: Pawn):
         self.fire_mode = self.FIRE_MODE_SINGLE
         self.owner = owner
         self.capacity_ = self.capacity
+        self.is_ready = True
         pass
 
     # 弾を発射する
     def fire(self, at: Vector2):
         if not self.is_reloading_:  # 装填中でなければ
             if self.capacity_ > 0:  # 弾が残っていれば
-                blt = Bullet(self.owner)  # 弾オブジェクトの生成
-                blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
-                blt.spawn(self.owner.world)  # 弾をワールドに生成する
-                blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
-                direction = Vector2.get_angle2(self.owner.location, at)  # 弾の角度(発砲者とマウスカーソル位置のなす角度)
-                direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
-                if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
-                    direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
-                    print("Diffusion")
-                blt.set_direction(direction)  # 飛翔方向を設定
-                blt.location += direction * 10
-                self.capacity_ -= 1  # 現在の装弾数を減らす
-                sounds.handgun_shot.play()  # 発砲音を鳴らす
+                if self.is_ready:  # 武器が発射可能であれば
+                    blt = Bullet(self.owner)  # 弾オブジェクトの生成
+                    blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
+                    blt.spawn(self.owner.world)  # 弾をワールドに生成する
+                    blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
+                    direction = Vector2.get_angle2(self.owner.location, at)  # 弾の角度(発砲者とマウスカーソル位置のなす角度)
+                    direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
+                    if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
+                        direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
+                        print("Diffusion")
+                    blt.set_direction(direction)  # 飛翔方向を設定
+                    blt.location += direction * 10
+                    self.capacity_ -= 1  # 現在の装弾数を減らす
+                    sounds.handgun_shot.play()  # 発砲音を鳴らす
+                    self.is_ready = False
+                    clock.schedule_unique(self.on_after_fire, self.fire_rate)
                 pass
             else:  # 弾が残っていない時
                 sounds.handgun_empty.play()  # 空撃ち音を鳴らす
@@ -421,6 +426,10 @@ class Weapon:
         sounds.handgun_slide.play()  # 銃スライド音を鳴らす
         self.capacity_ = self.capacity  # 現在の装填数を補充する
         self.is_reloading_ = False  # 装填中であるかどうかを設定する
+
+    # 発射後一定の発射速度に達したあとに呼ばれる
+    def on_after_fire(self):
+        self.is_ready = True
 
 
 class HandGun(Weapon):
