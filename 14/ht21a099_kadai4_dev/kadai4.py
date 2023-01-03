@@ -412,6 +412,14 @@ class Weapon:
             pass
         pass
 
+    # 現在の残弾数がないかどうかを返します
+    def isempty(self):
+        return self.capacity_ <= 0
+
+    # 現在、装填中かどうかを返します
+    def isreloading(self):
+        return self.is_reloading_
+
     # 弾の装填を行う
     def reload(self):
         if not self.is_reloading_:  # 装填中でなければ
@@ -675,7 +683,7 @@ class Enemy(Character):
         self.HP = 50
         self.Def_multiply = 0.5
         self.CharacterMoveSpeed = 5
-        self.weapon = None
+        self.weapon = HandGun(self)
         self.isBlock = False
         self.isKeyInput = False
         self.target_ = None
@@ -723,11 +731,20 @@ class Enemy(Character):
             rot = Vector2.get_angle2(self.location, self.target_.location)
             self.angle = -rot
 
+    # 所持している武器を発砲します
+    def fire(self):
+        if self.weapon.isempty():
+            if not self.weapon.is_reloading_:
+                self.weapon.reload()
+        else:
+            self.weapon.fire(self.target_.location)
+
     def update(self, dt):
         super().update(dt)
         self.find()
         self.look_at_target()
-
+        if self.target_ != None:
+            self.fire()
         pass
 
     def on_hit(self, actor):
