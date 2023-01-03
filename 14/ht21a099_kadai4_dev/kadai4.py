@@ -656,7 +656,9 @@ class Player(Character):
 # 敵クラス
 class Enemy(Character):
     IsLookAtTarget: bool = True
-    target_: Pawn = None
+    FindDistance: float = 100  # 発見距離
+    target_: Pawn = None  # 現在の攻撃対象
+    targets_: list[Pawn] = []  # 発見したターゲット一覧
 
     def __init__(self):
         self.SkinPic = "manbrown_gun"
@@ -670,8 +672,49 @@ class Enemy(Character):
         self.target_ = None
         self.hp_ = self.HP
 
+        self.IsLookAtTarget = True
+        self.FindDistance = 400
+        self.target_ = None
+        self.targets_ = []
+
+    # ワールド内のオブジェクトを探索し、自身から指定した半径内に含まれるプレイヤーを探します。
+    def find(self):
+        # ワールド内のオブジェクトを探索し、自分の半径内に含まれるプレイヤーを抜き出す
+        for p in self.world.Pawns:
+            if type(p) is Player:
+                distance = Vector2.get_distance(self.location, p.location)
+                if distance <= self.FindDistance:
+                    self.targets_.append(p)
+                else:
+                    if p in self.targets_:
+                        self.targets_.remove(p)
+        if self.targets_ == []:
+            self.target_ = None
+            return
+        # 作成したターゲットリストについて、それぞれの距離を求めてリストにする
+        dists: list[float] = []
+        for p in self.targets_:
+            dist = Vector2.get_distance(self.location, p.location)
+            dists.append(dist)
+        # 距離のリストから最短のものを求めて最も近くにあるオブジェクトを抜き出す
+        mn = dists[0]
+        mnidx = 0
+        for i, dist in enumerate(dists):
+            if mn >= dist:
+                mn = dist
+                mnidx = i
+        self.target_ = self.targets_[mnidx]
+        pass
+
     def update(self, dt):
         super().update(dt)
+        self.find()
+        if self.target_ != None:
+            if self.IsLookAtTarget:
+                # ターゲットの方向へ向く
+                rot = Vector2.get_angle2(self.location, self.target_.location)
+                self.angle = -rot
+            pass
         pass
 
     def on_hit(self, actor):
