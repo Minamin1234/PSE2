@@ -46,6 +46,21 @@ class Util:
         return vec
 
 
+# RGB情報を表すクラス
+class ColorRGB:
+    r: int = 0
+    g: int = 0
+    b: int = 0
+
+    def __init__(self, r: int, g: int, b: int):
+        self.r = r % 256
+        self.g = g % 256
+        self.b = b % 256
+
+    def get_tuple(self):
+        return (self.r, self.g, self.b)
+
+
 # 二次元ベクトルを表すクラス
 class Vector2:
     x: float = 0.0
@@ -55,6 +70,9 @@ class Vector2:
     def get_vector(v):
         return Vector2(v.x, v.y)
 
+    def get_tuple(v):
+        return (v.x, v.y)
+
     # xとyからベクトルを作成します
     def __init__(self, x: float, y: float):
         self.x, self.y = x, y
@@ -62,6 +80,11 @@ class Vector2:
     # 加算演算子の定義(ベクトル同士の足し算)
     def __add__(self, other):
         v = Vector2(self.x + other.x, self.y + other.y)
+        return v
+
+    # 減算演算子の定義(ベクトル同士の引き算)
+    def __sub__(self, other):
+        v = Vector2(self.x - other.x, self.y - other.y)
         return v
 
     # -演算子の定義(各要素の反転)
@@ -184,6 +207,50 @@ class World:
     # マップを設定します
     def set_map(self, newmap):
         self.Map = newmap
+
+
+# UIの定義したクラス
+class UI:
+    owner = None
+    center_: Vector2 = Vector2(0, 0)
+
+    def __init__(self, owner):
+        self.owner = owner
+        self.center_ = Vector2(0, 0)
+        self.center_.x = WIDTH / 2
+        self.center_.y = HEIGHT / 2
+        pass
+
+    def draw(self):
+        pass
+
+
+# プレイヤーのUI
+class PlayerUI(UI):
+    percent: float = 1.0  # 進捗率(= HPのパーセント)
+    progress_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点
+    progress_size: Vector2 = Vector2(0, 0)  # 進捗バーのサイズ
+    progress_filledcolor: ColorRGB = ColorRGB(0, 240, 140)  # 進捗が満たされた状態のカラー
+    progress_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 進捗が満たされていない状態のカラー
+
+    def __init__(self, owner):
+        super().__init__(owner)
+        self.percent = 1.0
+        self.progress_pos = Vector2(50, 750)
+        self.progress_size = Vector2(500, 40)
+        pass
+
+    def draw(self):
+        super().draw()
+        rect_bar_size: Vector2 = Vector2.get_vector(self.progress_size)
+        rect_bar_size.x = rect_bar_size.x * self.percent
+        hpbar: Rect = Rect(Vector2.get_tuple(self.progress_pos),
+                           Vector2.get_tuple(rect_bar_size))
+        hpbar_background: Rect = Rect(Vector2.get_tuple(self.progress_pos),
+                                      Vector2.get_tuple(self.progress_size))
+        screen.draw.filled_rect(hpbar_background, self.progress_backgroundcolor.get_tuple())
+        screen.draw.filled_rect(hpbar, self.progress_filledcolor.get_tuple())
+        pass
 
 
 # ゲーム内で配置/移動可能なオブジェクトクラス
@@ -555,11 +622,17 @@ class Character(Pawn):
     Def_multiply: float = 0.0  # 防御乗数(ダメージの軽減率)
     CharacterMoveSpeed = 5  # キャラクターの移動速度
     weapon: Weapon = None  # キャラクターの所持している武器
+    ui: UI = None  # UI
     hp_ = 0  # 現在のHP
 
     def __init__(self, pic_name: str):
         super().__init__(self.SkinPic)
         pass
+
+    def draw(self):
+        super().draw()
+        if self.ui is not None:
+            self.ui.draw()
 
     def update(self, dt):
         super().update(dt)
@@ -601,6 +674,8 @@ class Player(Character):
         self.weapon = HandGun(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
+
+        self.ui = PlayerUI(self)
 
     def update(self, dt):
         super().update(dt)
