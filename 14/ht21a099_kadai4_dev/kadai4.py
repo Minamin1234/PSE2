@@ -610,7 +610,6 @@ class Player(Character):
 
         lookat = Vector2.get_angle2(self.location, mousepos)
         self.angle = -lookat
-        #print(f"player: {self.moveInput},{id(self.moveInput)}")
 
     def key_input(self, keys):
         pressed_r = False
@@ -674,8 +673,11 @@ class Player(Character):
 class Enemy(Character):
     IsLookAtTarget: bool = True
     FindDistance: float = 100  # 発見距離
+    RefreshRate: float = 5  # 更新間隔
     target_: Pawn = None  # 現在の攻撃対象
     targets_: list[Pawn] = []  # 発見したターゲット一覧
+    ismoving_: bool = False  # 移動中かどうか
+    moveto_: Vector2 = Vector2(0, 0)
 
     def __init__(self):
         self.SkinPic = "manbrown_gun"
@@ -693,6 +695,7 @@ class Enemy(Character):
         self.FindDistance = 400
         self.target_ = None
         self.targets_ = []
+        self.direction_ = Vector2(0, 0)
 
     # ワールド内のオブジェクトを探索し、自身から指定した半径内に含まれるプレイヤーを探します。
     def find(self):
@@ -731,6 +734,25 @@ class Enemy(Character):
             rot = Vector2.get_angle2(self.location, self.target_.location)
             self.angle = -rot
 
+    def moveto(self):
+        if not self.ismoving_:
+            self.ismoving_ = True
+            self.moveto_ = self.world.Map.get_randomlocation_in_map()
+            direction = Vector2.get_direction(self.world.Map.get_worldlocation(self.location), self.moveto_)
+            self.direction_ = Vector2.get_vector(direction)
+            clock.schedule_unique(self.on_ended_move, self.RefreshRate)
+            print(f"RandomPos: {self.moveto_}")
+            pass
+        else:
+            dir = Vector2.get_direction(self.world.Map.get_worldlocation(self.location), self.moveto_)
+            self.moveInput = Vector2.get_vector(dir)
+        pass
+
+    def on_ended_move(self):
+        self.ismoving_ = False
+        self.direction_ = Vector2(0, 0)
+        pass
+
     # 所持している武器を発砲します
     def fire(self):
         if self.weapon.isempty():
@@ -745,6 +767,9 @@ class Enemy(Character):
         self.look_at_target()
         if self.target_ != None:
             self.fire()
+        self.location.x += self.moveInput.x * self.CharacterMoveSpeed
+        self.location.y += self.moveInput.y * self.CharacterMoveSpeed
+        print(f"pos: {self.world.Map.get_worldlocation(self.location)}")
         pass
 
     def on_hit(self, actor):
@@ -918,6 +943,14 @@ class Map:
         pos = Vector2(0, 0)
         pos.x = displaypos.x - origin.x
         pos.y = displaypos.y - origin.y
+        return pos
+
+    # マップ内でランダムな場所を返します
+    def get_randomlocation_in_map(self):
+        pos = Vector2(0, 0)
+        pos.x = random.uniform(0, self.width_)
+        pos.y = random.uniform(0, self.height_)
+        #print(pos)
         return pos
 
 
