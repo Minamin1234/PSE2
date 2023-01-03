@@ -675,7 +675,7 @@ class Enemy(Character):
     FindDistance: float = 100  # 発見距離
     RefreshRate: float = 5  # 更新間隔
     target_: Pawn = None  # 現在の攻撃対象
-    targets_: list[Pawn] = []  # 発見したターゲット一覧
+    targets_ = []  # 発見したターゲット一覧
     ismoving_: bool = False  # 移動中かどうか
     moveto_: Vector2 = Vector2(0, 0)
 
@@ -1007,15 +1007,15 @@ wallmap = [
     [N, N, N, N, N, N, N, D, CDL, CDR, N, N, N, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, L, R, L, R, N, N, N, N, N, N, N, N, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
     [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
 ]
 
