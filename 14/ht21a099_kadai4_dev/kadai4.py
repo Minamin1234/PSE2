@@ -706,15 +706,19 @@ class Enemy(Character):
         self.target_ = self.targets_[mnidx]
         pass
 
+    # 攻撃対象が存在する場合はその方向を向く。
+    def look_at_target(self):
+        if not self.IsLookAtTarget:
+            return
+        if self.target_ != None:
+            rot = Vector2.get_angle2(self.location, self.target_.location)
+            self.angle = -rot
+
     def update(self, dt):
         super().update(dt)
         self.find()
-        if self.target_ != None:
-            if self.IsLookAtTarget:
-                # ターゲットの方向へ向く
-                rot = Vector2.get_angle2(self.location, self.target_.location)
-                self.angle = -rot
-            pass
+        self.look_at_target()
+
         pass
 
     def on_hit(self, actor):
