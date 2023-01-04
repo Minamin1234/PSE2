@@ -248,7 +248,13 @@ class PlayerUI(UI):
 
     def draw(self):
         super().draw()
-        # HPバーの生成/描画
+        # PlayerのHP情報の取得
+        plyer: Player = self.owner
+        self.progress_percent = plyer.hp_ / plyer.HP
+        hp = self.progress_percent * 100
+        self.text_hp = f'{hp:.0f}'
+
+        # HPバーの生成
         rect_bar_size: Vector2 = Vector2.get_vector(self.progress_size)
         rect_bar_size.x = rect_bar_size.x * self.progress_percent
         hpbar_pos = Vector2(0, 0)
@@ -258,9 +264,12 @@ class PlayerUI(UI):
                            Vector2.get_tuple(rect_bar_size))
         hpbar_background: Rect = Rect(Vector2.get_tuple(hpbar_pos),
                                       Vector2.get_tuple(self.progress_size))
+        # HP値のテキスト表示位置の設定
         text_pos = Vector2(0, 0)
         text_pos.x = hpbar_pos.x + self.progress_size.x + self.text_pos.x
         text_pos.y = hpbar_pos.y + self.text_pos.y
+
+        # HPバー/テキストの表示処理
         screen.draw.filled_rect(hpbar_background, self.progress_backgroundcolor.get_tuple())
         screen.draw.filled_rect(hpbar, self.progress_filledcolor.get_tuple())
         screen.draw.text(self.text_hp, Vector2.get_tuple(text_pos), fontsize=self.text_fontsize)
