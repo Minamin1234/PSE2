@@ -743,6 +743,15 @@ class Player(Character):
         else:
             pressed_r = False
 
+        pressed_f = False
+        if keys.f:
+            print("f")
+            self.world.Map.move_map(Vector2(10, 0))
+            pressed_f = True
+        else:
+            pressed_r = False
+
+
     def mouse_down_input(self, pos):
         super().mouse_down_input(pos)
         mousepos = Vector2(pos[0], pos[1])
@@ -867,7 +876,6 @@ class Enemy(Character):
             self.fire()
         self.location.x += self.moveInput.x * self.CharacterMoveSpeed
         self.location.y += self.moveInput.y * self.CharacterMoveSpeed
-        print(f"pos: {self.world.Map.get_worldlocation(self.location)}")
         pass
 
     def on_hit(self, actor):
@@ -911,24 +919,23 @@ class Map:
         self.height_ = 0
         pass
 
-    # マップ内の全オブジェクトを移動させます
-    def move_map(self, newlocation: Vector2):
-        self.location_diff_ = Vector2.get_vector(newlocation)
+    # マップ内の全オブジェクトを指定した方向だけ移動させます
+    def move_map(self, locationdiff: Vector2):
+        self.location_diff_ = Vector2.get_vector(locationdiff)
         for obj in self.world.Pawns:
-            if type(obj) == StaticObject:
-                obj.location = obj.initiallocation + self.location_diff_
-            elif type(obj) == Player:
+            if type(obj) == Player:
                 continue
             else:
                 obj.location = obj.location + self.location_diff_
-            #print(newlocation)
-            #obj.location = obj.initiallocation + self.location_diff_
-        """
-        for obj in self.map_:
-            obj.location = obj.initiallocation + self.location_diff_
-        for obj in self.objs_:
-            obj.location = obj.initiallocation + self.location_diff_"""
         pass
+
+    def move_mapto(self, newlocation: Vector2):
+        for obj in self.world.Pawns:
+            if type(obj) == Player:
+                continue
+            else:
+                p: Pawn = obj
+                #p.location =
 
     # マップを生成します
     def generate(self):
@@ -1006,27 +1013,20 @@ class Map:
         playerpos = self.get_worldlocation(self.center_)
         if playerpos.x >= self.width_:
             self.move_map(-diff * 3)
-            #diff = Vector2.rotate(-diff, -90)
-            #self.move_map(diff)
             diff.x = 0
         if playerpos.x <= 0:
             self.move_map(-diff * 3)
-            #diff = Vector2.rotate(-diff, -90)
-            #self.move_map(diff)
             diff.x = 0
         if playerpos.y >= self.height_:
             self.move_map(-diff * 3)
-            #diff = Vector2.rotate(-diff, -90)
-            #self.move_map(diff)
             diff.y = 0
         if playerpos.y <= 0:
             self.move_map(-diff * 3)
-            #diff = Vector2.rotate(-diff, -90)
-            #self.move_map(diff)
             diff.y = 0
         self.move_map(diff)
         self.player.location = Vector2.get_vector(self.center_)
         pass
+
 
     # マップの原点を取得します
     def get_maporigin(self):
