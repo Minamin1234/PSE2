@@ -5,8 +5,8 @@ import random
 import pygame.mouse
 from pse2pgzrun import *  # type: ignore
 
-WIDTH = 1250
-HEIGHT = 850
+WIDTH = 1250 * 0.75
+HEIGHT = 850 * 0.75
 
 class Util:
 
@@ -227,29 +227,43 @@ class UI:
 
 # プレイヤーのUI
 class PlayerUI(UI):
-    percent: float = 1.0  # 進捗率(= HPのパーセント)
-    progress_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点
+    text_hp: str = "100"  # HP値
+    text_fontsize: int = 64  # フォントサイズ
+    text_pos: Vector2 = Vector2(0, 0)  # HP値の表示位置(HPバーからの相対位置)
+    progress_percent: float = 1.0  # 進捗率(= HPのパーセント)
+    progress_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点(サイズ比)
     progress_size: Vector2 = Vector2(0, 0)  # 進捗バーのサイズ
     progress_filledcolor: ColorRGB = ColorRGB(0, 240, 140)  # 進捗が満たされた状態のカラー
     progress_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 進捗が満たされていない状態のカラー
 
     def __init__(self, owner):
         super().__init__(owner)
-        self.percent = 1.0
-        self.progress_pos = Vector2(50, 750)
+        self.text_hp = "100"
+        self.text_fontsize = 64
+        self.text_pos = Vector2(10, 0)
+        self.progress_percent = 1.0
+        self.progress_pos = Vector2(0.05, 0.9)
         self.progress_size = Vector2(500, 40)
         pass
 
     def draw(self):
         super().draw()
+        # HPバーの生成/描画
         rect_bar_size: Vector2 = Vector2.get_vector(self.progress_size)
-        rect_bar_size.x = rect_bar_size.x * self.percent
-        hpbar: Rect = Rect(Vector2.get_tuple(self.progress_pos),
+        rect_bar_size.x = rect_bar_size.x * self.progress_percent
+        hpbar_pos = Vector2(0, 0)
+        hpbar_pos.x = WIDTH * self.progress_pos.x
+        hpbar_pos.y = HEIGHT * self.progress_pos.y
+        hpbar: Rect = Rect(Vector2.get_tuple(hpbar_pos),
                            Vector2.get_tuple(rect_bar_size))
-        hpbar_background: Rect = Rect(Vector2.get_tuple(self.progress_pos),
+        hpbar_background: Rect = Rect(Vector2.get_tuple(hpbar_pos),
                                       Vector2.get_tuple(self.progress_size))
+        text_pos = Vector2(0, 0)
+        text_pos.x = hpbar_pos.x + self.progress_size.x + self.text_pos.x
+        text_pos.y = hpbar_pos.y + self.text_pos.y
         screen.draw.filled_rect(hpbar_background, self.progress_backgroundcolor.get_tuple())
         screen.draw.filled_rect(hpbar, self.progress_filledcolor.get_tuple())
+        screen.draw.text(self.text_hp, Vector2.get_tuple(text_pos), fontsize=self.text_fontsize)
         pass
 
 
