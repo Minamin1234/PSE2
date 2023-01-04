@@ -536,7 +536,7 @@ class HandGun(Weapon):
         super().__init__(owner)
         self.capacity = 6
         self.capacity_ = self.capacity
-        self.fire_rate = 0.5
+        self.fire_rate = 0.25
         self.reload_time = 2.0
         self.diffusion = 0.2
         self.max_diffangle = 10
@@ -690,7 +690,7 @@ class Player(Character):
     def __init__(self):
         self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
         super().__init__(self.SkinPic)
-        self.HP = 100
+        self.HP = 500
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
