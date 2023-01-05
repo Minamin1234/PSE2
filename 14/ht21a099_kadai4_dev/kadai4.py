@@ -228,51 +228,93 @@ class UI:
 # プレイヤーのUI
 class PlayerUI(UI):
     text_hp: str = "100"  # HP値
-    text_fontsize: int = 64  # フォントサイズ
-    text_pos: Vector2 = Vector2(0, 0)  # HP値の表示位置(HPバーからの相対位置)
-    progress_percent: float = 1.0  # 進捗率(= HPのパーセント)
-    progress_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点(サイズ比)
-    progress_size: Vector2 = Vector2(0, 0)  # 進捗バーのサイズ
-    progress_filledcolor: ColorRGB = ColorRGB(0, 240, 140)  # 進捗が満たされた状態のカラー
-    progress_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 進捗が満たされていない状態のカラー
+    text_hp_fontsize: int = 64  # フォントサイズ
+    text_hp_pos: Vector2 = Vector2(0, 0)  # HP値の表示位置(HPバーからの相対位置)
+    progress_hp_percent: float = 1.0  # 進捗率(= HPのパーセント)
+    progress_hp_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点(サイズ比)
+    progress_hp_size: Vector2 = Vector2(0, 0)  # 進捗バーのサイズ
+    progress_hp_filledcolor: ColorRGB = ColorRGB(0, 240, 140)  # 進捗が満たされた状態のカラー
+    progress_hp_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 進捗が満たされていない状態のカラー
+    text_bullets: str = "10"  # 残弾数
+    text_bullets_fontsize: int = 64  # 残弾数のフォントサイズ
+    text_bullets_pos: Vector2 = Vector2(0, 0)  # 残弾数の表示位置(残弾数ゲージからの相対位置)
+    progress_bullets_percent: float = 1.0  # 残弾数のパーセント
+    progress_bullets_pos: Vector2 = Vector2(0, 0)  # 残弾数ゲージの表示位置(サイズ比)
+    progress_bullets_size: Vector2 = Vector2(0, 0)  # 残弾数ゲージのサイズ
+    progress_bullets_filledcolor: ColorRGB = ColorRGB(230, 210, 30)  # 残弾数ゲージが満たされた状態のカラー
+    progress_bullets_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 残弾数ゲージが満たされていない状態のカラー
 
     def __init__(self, owner):
         super().__init__(owner)
         self.text_hp = "100"
-        self.text_fontsize = 64
-        self.text_pos = Vector2(10, 0)
-        self.progress_percent = 1.0
-        self.progress_pos = Vector2(0.05, 0.9)
-        self.progress_size = Vector2(500, 40)
+        self.text_hp_fontsize = 64
+        self.text_hp_pos = Vector2(10, 0)
+        self.progress_hp_percent = 1.0
+        self.progress_hp_pos = Vector2(0.05, 0.9)
+        self.progress_hp_size = Vector2(450, 30)
+        self.text_bullets = "10"
+        self.text_bullets_fontsize = 32
+        self.text_bullets_pos = Vector2(10, 0)
+        self.progress_bullets_percent = 1.0
+        self.progress_bullets_pos = Vector2(0.8, 0.9)
+        self.progress_bullets_size = Vector2(100, 20)
         pass
 
     def draw(self):
         super().draw()
         # PlayerのHP情報の取得
         plyer: Player = self.owner
-        self.progress_percent = plyer.hp_ / plyer.HP
-        hp = self.progress_percent * 100
+        self.progress_hp_percent = plyer.hp_ / plyer.HP
+        hp = self.progress_hp_percent * 100
         self.text_hp = f'{hp:.0f}'
 
         # HPバーの生成
-        rect_bar_size: Vector2 = Vector2.get_vector(self.progress_size)
-        rect_bar_size.x = rect_bar_size.x * self.progress_percent
+        rect_hpbar_size: Vector2 = Vector2.get_vector(self.progress_hp_size)
+        rect_hpbar_size.x = rect_hpbar_size.x * self.progress_hp_percent
         hpbar_pos = Vector2(0, 0)
-        hpbar_pos.x = WIDTH * self.progress_pos.x
-        hpbar_pos.y = HEIGHT * self.progress_pos.y
+        hpbar_pos.x = WIDTH * self.progress_hp_pos.x
+        hpbar_pos.y = HEIGHT * self.progress_hp_pos.y
         hpbar: Rect = Rect(Vector2.get_tuple(hpbar_pos),
-                           Vector2.get_tuple(rect_bar_size))
+                           Vector2.get_tuple(rect_hpbar_size))
         hpbar_background: Rect = Rect(Vector2.get_tuple(hpbar_pos),
-                                      Vector2.get_tuple(self.progress_size))
+                                      Vector2.get_tuple(self.progress_hp_size))
         # HP値のテキスト表示位置の設定
-        text_pos = Vector2(0, 0)
-        text_pos.x = hpbar_pos.x + self.progress_size.x + self.text_pos.x
-        text_pos.y = hpbar_pos.y + self.text_pos.y
+        text_hp_pos = Vector2(0, 0)
+        text_hp_pos.x = hpbar_pos.x + self.progress_hp_size.x + self.text_hp_pos.x
+        text_hp_pos.y = hpbar_pos.y + self.text_hp_pos.y
 
-        # HPバー/テキストの表示処理
-        screen.draw.filled_rect(hpbar_background, self.progress_backgroundcolor.get_tuple())
-        screen.draw.filled_rect(hpbar, self.progress_filledcolor.get_tuple())
-        screen.draw.text(self.text_hp, Vector2.get_tuple(text_pos), fontsize=self.text_fontsize)
+        # Playerの残弾数情報を取得
+        plyer: Player = self.owner
+        self.progress_bullets_percent = plyer.weapon.capacity_ / plyer.weapon.capacity
+        bullets = self.progress_bullets_percent * 100
+        self.text_bullets = f'{bullets:.0f}'
+
+        # 残弾数ゲージの生成
+        rect_bulletbar_size: Vector2 = Vector2.get_vector(self.progress_bullets_size)
+        rect_bulletbar_size.x = rect_bulletbar_size.x * self.progress_bullets_percent
+        bulletbar_pos = Vector2(0, 0)
+        bulletbar_pos.x = WIDTH * self.progress_bullets_pos.x
+        bulletbar_pos.y = HEIGHT * self.progress_bullets_pos.y
+        bulletbar: Rect = Rect(Vector2.get_tuple(bulletbar_pos),
+                               Vector2.get_tuple(rect_bulletbar_size))
+        bulletbar_background: Rect = Rect(Vector2.get_tuple(bulletbar_pos),
+                                          Vector2.get_tuple(self.progress_bullets_size))
+
+        # 残弾数テキスト表示位置の設定
+        text_bullets_pos = Vector2(0, 0)
+        text_bullets_pos.x = bulletbar_pos.x + self.progress_bullets_size.x + self.text_bullets_pos.x
+        text_bullets_pos.y = bulletbar_pos.y + self.text_bullets_pos.y
+
+        # それぞれの表示処理
+        # - HPバー/HPテキスト
+        screen.draw.filled_rect(hpbar_background, self.progress_hp_backgroundcolor.get_tuple())
+        screen.draw.filled_rect(hpbar, self.progress_hp_filledcolor.get_tuple())
+        screen.draw.text(self.text_hp, Vector2.get_tuple(text_hp_pos), fontsize=self.text_hp_fontsize)
+
+        # - 残弾ゲージ/残弾数テキスト
+        screen.draw.filled_rect(bulletbar_background, self.progress_bullets_backgroundcolor.get_tuple())
+        screen.draw.filled_rect(bulletbar, self.progress_bullets_filledcolor.get_tuple())
+        screen.draw.text(self.text_bullets, Vector2.get_tuple(text_bullets_pos), fontsize=self.text_bullets_fontsize)
         pass
 
 
