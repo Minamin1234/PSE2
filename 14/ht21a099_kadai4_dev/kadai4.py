@@ -489,6 +489,16 @@ class Bullet(Pawn):
         self.location.y += self.direction.y * self.velocity
 
 
+# ショットガン用の弾
+class ShotShell(Bullet):
+
+    def __init__(self, owner: Pawn):
+        super().__init__(owner)
+        self.velocity = 20
+        self.owner = owner
+        pass
+
+
 # 武器クラス
 class Weapon:
     owner: Pawn = None  # 所有者
@@ -572,6 +582,7 @@ class Weapon:
         self.is_ready = True
 
 
+# ハンドガン
 class HandGun(Weapon):
 
     def __init__(self, owner: Pawn):
@@ -591,6 +602,73 @@ class HandGun(Weapon):
     def reload(self):
         super().reload()
         return self
+
+
+# サブマシンガン
+class SMG(Weapon):
+
+    def __init__(self, owner: Pawn):
+        super().__init__(owner)
+        self.capacity = 30
+        self.capacity_ = self.capacity
+        self.fire_rate = 0.15
+        self.reload_time = 3.0
+        self.diffusion = 0.5
+        self.max_diffangle = 20
+        self.fire_mode = self.FIRE_MODE_SINGLE
+        pass
+
+    def fire(self, at: Vector2):
+        pass
+
+
+# ショットガン
+class Shotgun(Weapon):
+    shells: int = 5
+    shotdiffangle: float = 15
+
+    def __init__(self, owner: Pawn):
+        super().__init__(owner)
+        self.capacity = 6
+        self.capacity_ = self.capacity
+        self.fire_rate = 1.25
+        self.reload_time = 9.0
+        self.diffusion = 0.75
+        self.max_diffangle = 5.0
+        self.fire_mode = self.FIRE_MODE_SHOT
+        self.shotdiffangle = 15
+        pass
+
+    def fire(self, at: Vector2):
+        if not self.is_reloading_:
+            if self.capacity_ > 0:
+                shotangle = self.shotdiffangle / (self.shells - 1)
+                shotangle_ = -shotangle
+                if self.is_ready:
+                    for i in range(self.shells):
+                        blt = ShotShell(self.owner)
+                        blt.damage = Util.random_damage(self.damage, self.damage_multiply)
+                        blt.spawn(self.owner.world)
+                        blt.location = Vector2.get_vector(self.owner.location)
+                        direction = Vector2.get_angle2(self.owner.location, at)
+                        direction = Vector2.get_direction_fromdeg(direction - 90)
+                        direction = Vector2.rotate(direction, shotangle_)
+                        if Util.random_bool(self.diffusion):
+                            direction = Util.random_rotatevector(direction, self.max_diffangle)
+                        blt.set_direction(direction)
+                        blt.location += direction * 10
+                        shotangle_ += shotangle
+                        pass
+                    self.capacity_ -= 1
+                    # sounds
+                    self.is_ready = False
+                    clock.schedule_unique(self.on_after_fire, self.fire_rate)
+                pass
+            else:
+                pass
+                # sounds
+            pass
+        pass
 
 
 # ゲーム内に配置可能な静的オブジェクト
@@ -736,7 +814,7 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = HandGun(self)
+        self.weapon = Shotgun(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
