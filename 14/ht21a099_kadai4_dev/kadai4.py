@@ -746,7 +746,7 @@ class Player(Character):
         pressed_f = False
         if keys.f:
             print("f")
-            self.world.Map.move_map(Vector2(10, 0))
+            self.world.Map.set_tocenter(Vector2(100, 100))
             pressed_f = True
         else:
             pressed_r = False
@@ -929,13 +929,12 @@ class Map:
                 obj.location = obj.location + self.location_diff_
         pass
 
-    def move_mapto(self, newlocation: Vector2):
-        for obj in self.world.Pawns:
-            if type(obj) == Player:
-                continue
-            else:
-                p: Pawn = obj
-                #p.location =
+    # 指定したワールド位置に中心を持ってくる
+    def set_tocenter(self, newlocation: Vector2):
+        diff = Vector2(0, 0)
+        diff = self.get_worldlocation(self.center_) - newlocation
+        self.move_map(Vector2.get_vector(diff))
+        pass
 
     # マップを生成します
     def generate(self):
@@ -1161,6 +1160,7 @@ enemy = Enemy()
 enemy.location = Vector2(150, 150)
 enemy.spawn(world)
 player.spawn(world)
+mp.set_tocenter(Vector2(10, 800))
 
 
 def draw():
