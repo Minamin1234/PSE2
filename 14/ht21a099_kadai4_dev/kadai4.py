@@ -604,7 +604,7 @@ class HandGun(Weapon):
         return self
 
 
-# サブマシンガン
+# サブマシンガン(連射が可能な銃)
 class SMG(Weapon):
 
     def __init__(self, owner: Pawn):
@@ -622,10 +622,10 @@ class SMG(Weapon):
         pass
 
 
-# ショットガン
+# ショットガン(一度の射撃で複数弾が扇状に拡散する銃)
 class Shotgun(Weapon):
-    shells: int = 5
-    shotdiffangle: float = 15
+    shells: int = 5  # 一度に発射する弾数
+    shotdiffangle: float = 15  # 拡散角度
 
     def __init__(self, owner: Pawn):
         super().__init__(owner)
@@ -642,10 +642,10 @@ class Shotgun(Weapon):
     def fire(self, at: Vector2):
         if not self.is_reloading_:
             if self.capacity_ > 0:
-                shotangle = self.shotdiffangle / (self.shells - 1)
-                shotangle_ = -shotangle
+                shotangle = self.shotdiffangle / (self.shells - 1)  # 拡散させる角度(弾毎に角度をつける)
+                shotangle_ = -shotangle  # 負の角度から扇状に拡散させる
                 if self.is_ready:
-                    for i in range(self.shells):
+                    for i in range(self.shells):  # 弾の数だけ繰り返す
                         blt = ShotShell(self.owner)
                         blt.damage = Util.random_damage(self.damage, self.damage_multiply)
                         blt.spawn(self.owner.world)
