@@ -715,7 +715,7 @@ class Shotgun(Weapon):
         self.capacity = 6
         self.capacity_ = self.capacity
         self.fire_rate = 1.25
-        self.reload_time = 9.0
+        self.reload_time = 7.5
         self.diffusion = 0.75
         self.max_diffangle = 5.0
         self.fire_mode = self.FIRE_MODE_SHOT
@@ -742,16 +742,33 @@ class Shotgun(Weapon):
                         blt.location += direction * 10
                         shotangle_ += shotangle
                         pass
+                    sounds.shotgun_shot.play()
                     self.capacity_ -= 1
-                    # sounds
                     self.is_ready = False
                     clock.schedule_unique(self.on_after_fire, self.fire_rate)
                 pass
             else:
                 pass
-                # sounds
+                sounds.shotgun_empty.play()
             pass
         pass
+
+    def on_after_fire(self):
+        super().on_after_fire()
+        sounds.shotgun_pump.play()
+        pass
+
+    def reload(self):
+        if not self.is_reloading_:
+            self.is_reloading_ = True
+            sounds.shotgun_reload.play()
+            clock.schedule_unique(self.on_ended_reload, self.reload_time)
+            pass
+
+    def on_ended_reload(self):
+        sounds.shotgun_pump.play()
+        self.capacity_ = self.capacity
+        self.is_reloading_ = False
 
 
 # ゲーム内に配置可能な静的オブジェクト
