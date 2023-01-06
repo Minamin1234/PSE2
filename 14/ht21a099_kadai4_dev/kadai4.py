@@ -8,6 +8,7 @@ from pse2pgzrun import *  # type: ignore
 WIDTH = 1250 * 0.75
 HEIGHT = 850 * 0.75
 
+
 class Util:
 
     # 指定した最小値/最大値の範囲内で値を返す
@@ -225,96 +226,178 @@ class UI:
         pass
 
 
+# UI内の要素クラス
+class UIElement:
+    owner: UI = None  # 所有者(UIクラス)
+    pos: Vector2 = Vector2(0, 0)  # 位置
+    use_percentpos: bool = False  # 位置を画面サイズの比で指定するかどうか
+    size: Vector2 = Vector2(0, 0)  # 要素のサイズ
+    pos_: Vector2 = Vector2(0, 0)  # 配置時のサイズ
+
+    def __init__(self, owner: UI):
+        self.owner = owner
+        if self.use_percentpos:  # 画面サイズの比で指定する場合
+            self.pos_ = self.get_percentpos()  # 配置位置を求める
+        else:  # 画面座標で指定する場合
+            self.pos_ = Vector2.get_vector(self.pos)
+        pass
+
+    def draw(self):
+        if self.use_percentpos:
+            self.pos_ = self.get_percentpos()
+        else:
+            self.pos_ = Vector2.get_vector(self.pos)
+        pass
+
+    # 画面サイズの比から位置を求める
+    def get_percentpos(self):
+        pos = Vector2(0, 0)
+        pos.x = WIDTH * self.pos.x
+        pos.y = HEIGHT * self.pos.y
+        return pos
+
+
+# UI要素クラスを継承したUI内テキストクラス
+class UIText(UIElement):
+    content: str = ""
+    fontsize: int = 32
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.content = ""
+        self.fontsize = 32
+
+    def draw(self):
+        super().draw()
+        screen.draw.text(self.content, Vector2.get_tuple(self.pos_), fontsize=self.fontsize)
+
+
+# UI要素クラスを継承した進捗バークラス
+class UIProgressBar(UIElement):
+    percent: float = 1.0  # 進捗率(1.0で満たされ、0.0は何もなし)
+    filledcolor: ColorRGB = ColorRGB(0, 0, 0)  # 進捗が満たされた状態のカラー
+    backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # 進捗が満たレテいない状態(背景)のカラー
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.percent = 1.0
+        self.filledcolor = ColorRGB(0, 0, 0)
+        self.backgroundcolor = ColorRGB(0, 0, 0)
+
+    def draw(self):
+        super().draw()
+        # 四角の生成
+        rect_size = Vector2.get_vector(self.size)
+        rect_size.x = rect_size.x * self.percent
+        bar: Rect = Rect(Vector2.get_tuple(self.pos_),
+                         Vector2.get_tuple(rect_size))
+        bar_background: Rect = Rect(Vector2.get_tuple(self.pos_),
+                                    Vector2.get_tuple(self.size))
+
+        # 四角の描画処理
+        screen.draw.filled_rect(bar_background, self.backgroundcolor.get_tuple())
+        screen.draw.filled_rect(bar, self.filledcolor.get_tuple())
+        pass
+
+
+# HPバークラス(HPバーとHP値テキスト)
+class UIHPBar(UIProgressBar):
+    hp: float = 100  # HP値
+    hp_text_pos_relative: Vector2 = Vector2(0, 0)  # HPテキストの相対位置
+    hp_UItext_: UIText = None  # UITextオブジェクト
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.hp_UItext_ = UIText(owner)
+        self.hp_UItext_.content = f"{self.hp:.0f}"
+        self.percent = 1.0
+        self.hp_UItext_.use_percentpos = False
+        pass
+
+    def draw(self):
+        super().draw()
+        pos = Vector2(0, 0)
+        pos.x = self.pos_.x + self.size.x + self.hp_text_pos_relative.x
+        pos.y = self.pos_.y + self.hp_text_pos_relative.y
+        self.hp_UItext_.content = f"{self.hp:.0f}"
+        self.hp_UItext_.pos = pos
+        self.hp_UItext_.draw()
+
+
+# 残弾数ゲージクラス(残弾数ゲージ+残弾数テキスト)
+class UIBulletGauge(UIProgressBar):
+    bullets: int = 10  # 残弾数
+    bullets_textpos_relative: Vector2 = Vector2(0, 0)  # 残弾数テキストの相対位置
+    bullets_UIText_: UIText = None  # 残弾数テキストオブジェクト
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.bullets_UIText_ = UIText(owner)
+        self.bullets_UIText_.content = f"{self.bullets}"
+        self.percent = 1.0
+        self.bullets_UIText_.use_percentpos = False
+
+        pass
+
+    def draw(self):
+        super().draw()
+        pos = Vector2(0, 0)
+        pos.x = self.pos_.x + self.size.x + self.bullets_textpos_relative.x
+        pos.y = self.pos_.y + self.bullets_textpos_relative.y
+        self.bullets_UIText_.content = f"{self.bullets}"
+        self.bullets_UIText_.pos = pos
+        self.bullets_UIText_.draw()
+
+
 # プレイヤーのUI
 class PlayerUI(UI):
-    text_hp: str = "100"  # HP値
-    text_hp_fontsize: int = 64  # フォントサイズ
-    text_hp_pos: Vector2 = Vector2(0, 0)  # HP値の表示位置(HPバーからの相対位置)
-    progress_hp_percent: float = 1.0  # 進捗率(= HPのパーセント)
-    progress_hp_pos: Vector2 = Vector2(0, 0)  # 進捗バーの始点(サイズ比)
-    progress_hp_size: Vector2 = Vector2(0, 0)  # 進捗バーのサイズ
-    progress_hp_filledcolor: ColorRGB = ColorRGB(0, 240, 140)  # 進捗が満たされた状態のカラー
-    progress_hp_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 進捗が満たされていない状態のカラー
-    text_bullets: str = "10"  # 残弾数
-    text_bullets_fontsize: int = 64  # 残弾数のフォントサイズ
-    text_bullets_pos: Vector2 = Vector2(0, 0)  # 残弾数の表示位置(残弾数ゲージからの相対位置)
-    progress_bullets_percent: float = 1.0  # 残弾数のパーセント
-    progress_bullets_pos: Vector2 = Vector2(0, 0)  # 残弾数ゲージの表示位置(サイズ比)
-    progress_bullets_size: Vector2 = Vector2(0, 0)  # 残弾数ゲージのサイズ
-    progress_bullets_filledcolor: ColorRGB = ColorRGB(230, 210, 30)  # 残弾数ゲージが満たされた状態のカラー
-    progress_bullets_backgroundcolor: ColorRGB = ColorRGB(150, 150, 150)  # 残弾数ゲージが満たされていない状態のカラー
+    hpbar: UIHPBar = None  # HPバー要素
+    bulletguage: UIBulletGauge = None  # 残弾数ゲージ要素
 
     def __init__(self, owner):
         super().__init__(owner)
-        self.text_hp = "100"
-        self.text_hp_fontsize = 64
-        self.text_hp_pos = Vector2(10, 0)
-        self.progress_hp_percent = 1.0
-        self.progress_hp_pos = Vector2(0.05, 0.9)
-        self.progress_hp_size = Vector2(450, 30)
-        self.text_bullets = "10"
-        self.text_bullets_fontsize = 32
-        self.text_bullets_pos = Vector2(10, 0)
-        self.progress_bullets_percent = 1.0
-        self.progress_bullets_pos = Vector2(0.8, 0.9)
-        self.progress_bullets_size = Vector2(100, 20)
+        me: Player = self.owner
+
+        # HPバー要素
+        self.hpbar = UIHPBar(self)
+        self.hpbar.hp = 100
+        self.hpbar.percent = 1.0
+        self.hpbar.backgroundcolor = ColorRGB(150, 150, 150)  # HPが満たされていない状態のカラー(背景のカラー)
+        self.hpbar.filledcolor = ColorRGB(0, 240, 140)  # HPが満たされた状態のカラー
+        self.hpbar.pos = Vector2(0.05, 0.9)
+        self.hpbar.use_percentpos = True
+        self.hpbar.size = Vector2(450, 30)
+        self.hpbar.hp_text_pos_relative = Vector2(10, 0)
+        self.hpbar.hp_UItext_.fontsize = 52
+
+        # 残弾数ゲージ要素
+        self.bulletgauge = UIBulletGauge(self)
+        self.bulletgauge.bullets = me.weapon.capacity
+        self.bulletgauge.percent = 1.0
+        self.bulletgauge.backgroundcolor = ColorRGB(150, 150, 150)
+        self.bulletgauge.filledcolor = ColorRGB(230, 210, 30)
+        self.bulletgauge.pos = Vector2(0.8, 0.9)
+        self.bulletgauge.use_percentpos = True
+        self.bulletgauge.size = Vector2(100, 20)
+        self.bulletgauge.bullets_textpos_relative = Vector2(10, 0)
+        self.bulletgauge.bullets_UIText_.fontsize = 32
+
         pass
 
     def draw(self):
         super().draw()
         # PlayerのHP情報の取得
-        plyer: Player = self.owner
-        self.progress_hp_percent = plyer.hp_ / plyer.HP
-        hp = self.progress_hp_percent * 100
-        self.text_hp = f'{hp:.0f}'
+        me: Player = self.owner
 
-        # HPバーの生成
-        rect_hpbar_size: Vector2 = Vector2.get_vector(self.progress_hp_size)
-        rect_hpbar_size.x = rect_hpbar_size.x * self.progress_hp_percent
-        hpbar_pos = Vector2(0, 0)
-        hpbar_pos.x = WIDTH * self.progress_hp_pos.x
-        hpbar_pos.y = HEIGHT * self.progress_hp_pos.y
-        hpbar: Rect = Rect(Vector2.get_tuple(hpbar_pos),
-                           Vector2.get_tuple(rect_hpbar_size))
-        hpbar_background: Rect = Rect(Vector2.get_tuple(hpbar_pos),
-                                      Vector2.get_tuple(self.progress_hp_size))
-        # HP値のテキスト表示位置の設定
-        text_hp_pos = Vector2(0, 0)
-        text_hp_pos.x = hpbar_pos.x + self.progress_hp_size.x + self.text_hp_pos.x
-        text_hp_pos.y = hpbar_pos.y + self.text_hp_pos.y
+        # HPバーの更新と描画
+        self.hpbar.hp = (me.hp_ / me.HP) * 100
+        self.hpbar.percent = me.hp_ / me.HP
+        self.hpbar.draw()
 
-        # Playerの残弾数情報を取得
-        plyer: Player = self.owner
-        self.progress_bullets_percent = plyer.weapon.capacity_ / plyer.weapon.capacity
-        bullets = self.progress_bullets_percent * 100
-        self.text_bullets = f'{bullets:.0f}'
-
-        # 残弾数ゲージの生成
-        rect_bulletbar_size: Vector2 = Vector2.get_vector(self.progress_bullets_size)
-        rect_bulletbar_size.x = rect_bulletbar_size.x * self.progress_bullets_percent
-        bulletbar_pos = Vector2(0, 0)
-        bulletbar_pos.x = WIDTH * self.progress_bullets_pos.x
-        bulletbar_pos.y = HEIGHT * self.progress_bullets_pos.y
-        bulletbar: Rect = Rect(Vector2.get_tuple(bulletbar_pos),
-                               Vector2.get_tuple(rect_bulletbar_size))
-        bulletbar_background: Rect = Rect(Vector2.get_tuple(bulletbar_pos),
-                                          Vector2.get_tuple(self.progress_bullets_size))
-
-        # 残弾数テキスト表示位置の設定
-        text_bullets_pos = Vector2(0, 0)
-        text_bullets_pos.x = bulletbar_pos.x + self.progress_bullets_size.x + self.text_bullets_pos.x
-        text_bullets_pos.y = bulletbar_pos.y + self.text_bullets_pos.y
-
-        # それぞれの表示処理
-        # - HPバー/HPテキスト
-        screen.draw.filled_rect(hpbar_background, self.progress_hp_backgroundcolor.get_tuple())
-        screen.draw.filled_rect(hpbar, self.progress_hp_filledcolor.get_tuple())
-        screen.draw.text(self.text_hp, Vector2.get_tuple(text_hp_pos), fontsize=self.text_hp_fontsize)
-
-        # - 残弾ゲージ/残弾数テキスト
-        screen.draw.filled_rect(bulletbar_background, self.progress_bullets_backgroundcolor.get_tuple())
-        screen.draw.filled_rect(bulletbar, self.progress_bullets_filledcolor.get_tuple())
-        screen.draw.text(self.text_bullets, Vector2.get_tuple(text_bullets_pos), fontsize=self.text_bullets_fontsize)
+        # 残弾数ゲージの更新と描画
+        self.bulletgauge.bullets = me.weapon.capacity_
+        self.bulletgauge.percent = me.weapon.capacity_ / me.weapon.capacity
+        self.bulletgauge.draw()
         pass
 
 
