@@ -494,7 +494,6 @@ class PlayerUI(UI):
     bulletguage: UIBulletGauge = None  # 残弾数ゲージ要素
     scoretext: UIText = None  # スコアテキスト
     pausetext: UIText = None  # 一時停止時のテキスト
-    button: UIButton = None
 
     def __init__(self, owner):
         super().__init__(owner)
@@ -540,12 +539,6 @@ class PlayerUI(UI):
         self.pausetext.content = "Pause"
         self.pausetext.fontsize = 64
         self.addto_viewport(self.pausetext)
-
-        self.button = UIButton(self)
-        self.button.pos = Vector2(0.5, 0.5)
-        self.button.use_percentpos = True
-        self.button.size = Vector2(100, 20)
-        self.addto_viewport(self.button)
 
         pass
 
