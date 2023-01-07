@@ -230,9 +230,13 @@ class World:
     def set_map(self, newmap):
         self.Map = newmap
 
-    # オブジェクトの更新処理の停止を設定します
+    # オブジェクトの更新処理の停止を設定する
     def set_pause(self, pause: bool):
         self.ispause_ = pause
+
+    # 現在、オブジェクトの更新処理が一時停止しているかどうかを返す
+    def get_pause(self):
+        return self.ispause_
 
 
 # UIの定義したクラス
@@ -399,6 +403,7 @@ class PlayerUI(UI):
     hpbar: UIHPBar = None  # HPバー要素
     bulletguage: UIBulletGauge = None  # 残弾数ゲージ要素
     scoretext: UIText = None  # スコアテキスト
+    pausetext: UIText = None  # 一時停止時のテキスト
 
     def __init__(self, owner):
         super().__init__(owner)
@@ -433,6 +438,13 @@ class PlayerUI(UI):
         self.scoretext.pos = Vector2(0.05, 0.05)
         self.scoretext.use_percentpos = True
         self.scoretext.content = "0"
+        self.scoretext.fontsize = 32
+
+        self.pausetext = UIText(self)
+        self.pausetext.pos = Vector2(0.45, 0.45)
+        self.pausetext.use_percentpos = True
+        self.pausetext.content = "Pause"
+        self.pausetext.fontsize = 64
 
         pass
 
@@ -453,6 +465,9 @@ class PlayerUI(UI):
 
         self.scoretext.content = f"Score: {str(me.score_)}"
         self.scoretext.draw()
+
+        if me.world.get_pause():
+            self.pausetext.draw()
         pass
 
 
@@ -1109,9 +1124,8 @@ class Player(Character):
         pass
 
     def on_key_down(self, key):
-        print("keydown")
         if key == pygame.K_ESCAPE:
-            self.world.set_pause(not self.world.ispause_)
+            self.world.set_pause(not self.world.get_pause())
         pass
 
     def on_hit(self, actor):
