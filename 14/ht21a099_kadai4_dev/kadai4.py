@@ -215,6 +215,7 @@ class UI:
     owner = None
     center_: Vector2 = Vector2(0, 0)
 
+    # 初期化の処理について記述する
     def __init__(self, owner):
         self.owner = owner
         self.center_ = Vector2(0, 0)
@@ -222,6 +223,7 @@ class UI:
         self.center_.y = HEIGHT / 2
         pass
 
+    # 描画処理について記述する
     def draw(self):
         pass
 
