@@ -329,6 +329,7 @@ class UIBulletGauge(UIProgressBar):
     bullets: int = 10  # 残弾数
     bullets_textpos_relative: Vector2 = Vector2(0, 0)  # 残弾数テキストの相対位置
     bullets_UIText_: UIText = None  # 残弾数テキストオブジェクト
+    bulletsgauge_linecolor: ColorRGB = ColorRGB(0, 0, 0)  # ゲージのラインカラー
 
     def __init__(self, owner: UI):
         super().__init__(owner)
@@ -340,7 +341,8 @@ class UIBulletGauge(UIProgressBar):
         pass
 
     def draw(self):
-        super().draw()
+        super().draw()  # Progressバーの描画処理
+        # 残弾数テキストの描画処理
         pos = Vector2(0, 0)
         pos.x = self.pos_.x + self.size.x + self.bullets_textpos_relative.x
         pos.y = self.pos_.y + self.bullets_textpos_relative.y
@@ -348,19 +350,21 @@ class UIBulletGauge(UIProgressBar):
         self.bullets_UIText_.pos = pos
         self.bullets_UIText_.draw()
         me: Player = self.owner.owner
-        interval = self.size.x / me.weapon.capacity
-        for i in range(0, me.weapon.capacity - 1):
-            pos = Vector2(0, 0)
-            pos.x = self.pos_.x + (interval * i)
-            pos.y = self.pos_.y
-            size = Vector2(0, 0)
-            size.x = interval
-            size.y = self.size.y
-            rect = Rect(Vector2.get_tuple(pos),
-                        Vector2.get_tuple(size))
-            pygame.draw.rect(screen.surface, (0, 0, 0), rect, width=1)
-            print(size)
-        # pygame.draw.rect(screen.surface,(0, 0, 0), Rect((0, 0), (10, 10)), width=2)
+
+        # ゲージのライン描画処理
+        interval = self.size.x / me.weapon.capacity  # ラインの描画間隔
+        for i in range(1, me.weapon.capacity):
+            offset = 1
+            pos_lower = Vector2(0, 0)
+            pos_upper = Vector2(0, 0)
+            pos_lower.x = self.pos_.x + (interval * i)
+            pos_lower.y = self.pos_.y - offset
+            pos_upper.x = pos_lower.x
+            pos_upper.y = pos_lower.y + self.size.y
+            pygame.draw.line(screen.surface,
+                             self.bulletsgauge_linecolor.get_tuple(),
+                             Vector2.get_tuple(pos_lower),
+                             Vector2.get_tuple(pos_upper), 1)
 
 
 # プレイヤーのUI
@@ -390,11 +394,12 @@ class PlayerUI(UI):
         self.bulletgauge.percent = 1.0
         self.bulletgauge.backgroundcolor = ColorRGB(150, 150, 150)
         self.bulletgauge.filledcolor = ColorRGB(230, 210, 30)
-        self.bulletgauge.pos = Vector2(0.8, 0.9)
+        self.bulletgauge.bulletsgauge_linecolor = ColorRGB(120, 110, 10)
+        self.bulletgauge.pos = Vector2(0.75, 0.9)
         self.bulletgauge.use_percentpos = True
-        self.bulletgauge.size = Vector2(100, 20)
-        self.bulletgauge.bullets_textpos_relative = Vector2(10, 0)
-        self.bulletgauge.bullets_UIText_.fontsize = 32
+        self.bulletgauge.size = Vector2(175, 10)
+        self.bulletgauge.bullets_textpos_relative = Vector2(10, -4)
+        self.bulletgauge.bullets_UIText_.fontsize = 24
 
         pass
 
@@ -684,7 +689,7 @@ class HandGun(Weapon):
 
     def __init__(self, owner: Pawn):
         super().__init__(owner)
-        self.capacity = 6
+        self.capacity = 10
         self.capacity_ = self.capacity
         self.fire_rate = 0.25
         self.reload_time = 2.0
