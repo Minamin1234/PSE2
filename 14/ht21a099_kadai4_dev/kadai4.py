@@ -347,6 +347,20 @@ class UIBulletGauge(UIProgressBar):
         self.bullets_UIText_.content = f"{self.bullets}"
         self.bullets_UIText_.pos = pos
         self.bullets_UIText_.draw()
+        me: Player = self.owner.owner
+        interval = self.size.x / me.weapon.capacity
+        for i in range(0, me.weapon.capacity - 1):
+            pos = Vector2(0, 0)
+            pos.x = self.pos_.x + (interval * i)
+            pos.y = self.pos_.y
+            size = Vector2(0, 0)
+            size.x = interval
+            size.y = self.size.y
+            rect = Rect(Vector2.get_tuple(pos),
+                        Vector2.get_tuple(size))
+            pygame.draw.rect(screen.surface, (0, 0, 0), rect, width=1)
+            print(size)
+        # pygame.draw.rect(screen.surface,(0, 0, 0), Rect((0, 0), (10, 10)), width=2)
 
 
 # プレイヤーのUI
