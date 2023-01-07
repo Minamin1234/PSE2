@@ -563,7 +563,6 @@ class PlayerUI(UI):
         if me.world.get_pause():
             self.pausetext.draw()
 
-        self.button.draw()
         pass
 
 
