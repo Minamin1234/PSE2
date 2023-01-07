@@ -197,10 +197,10 @@ class World:
         for p in self.Pawns:
             p.on_mouse_down(pos)
 
-    def on_mouseup_input(self):
+    def on_mouseup_input(self, pos):
         for p in self.Pawns:
             pw: Pawn = p
-            pw.on_mouse_up()
+            pw.on_mouse_up(pos)
 
     def on_key_down(self, key):
         for p in self.Pawns:
@@ -243,6 +243,7 @@ class World:
 class UI:
     owner = None
     center_: Vector2 = Vector2(0, 0)
+    elements_: list = []
 
     # 初期化の処理について記述する
     def __init__(self, owner):
@@ -252,8 +253,37 @@ class UI:
         self.center_.y = HEIGHT / 2
         pass
 
+    # UI要素をUIに追加する
+    def addto_viewport(self, element):
+        self.elements_.append(element)
+        pass
+
     # 描画処理について記述する
     def draw(self):
+        pass
+
+    def on_key_down(self, key):
+        for e in self.elements_:
+            elt: UIElement = e
+            elt.on_key_down(key)
+        pass
+
+    def on_key_up(self, key):
+        for e in self.elements_:
+            elt: UIElement = e
+            elt.on_key_up(key)
+        pass
+
+    def on_mouse_down(self, pos):
+        for e in self.elements_:
+            elt: UIElement = e
+            elt.on_mouse_down(pos)
+        pass
+
+    def on_mosue_up(self, pos):
+        for e in self.elements_:
+            elt: UIElement = e
+            elt.on_mouse_up(pos)
         pass
 
 
@@ -287,6 +317,18 @@ class UIElement:
         pos.y = HEIGHT * self.pos.y
         return pos
 
+    def on_mouse_down(self, pos):
+        pass
+
+    def on_mouse_up(self, pos):
+        pass
+
+    def on_key_down(self, key):
+        pass
+
+    def on_key_up(self, key):
+        pass
+
 
 # UI要素クラスを継承したUI内テキストクラス
 class UIText(UIElement):
@@ -301,6 +343,54 @@ class UIText(UIElement):
     def draw(self):
         super().draw()
         screen.draw.text(self.content, Vector2.get_tuple(self.pos_), fontsize=self.fontsize)
+
+
+# ボタン要素クラス
+class UIButton(UIElement):
+    backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # ボタンのカラー
+    rect_: Rect = None  # ボタンの四角形オブジェクト
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.rect_ = Rect(Vector2.get_tuple(self.pos_),
+                          Vector2.get_tuple(self.size))
+
+    def draw(self):
+        super().draw()
+        self.rect_ = Rect(Vector2.get_tuple(self.pos_),
+                    Vector2.get_tuple(self.size))
+        screen.draw.filled_rect(self.rect_, self.backgroundcolor.get_tuple())
+
+    # ボタンが押された時の処理
+    def on_clicked(self):
+        pass
+
+    def on_mouse_down(self, pos):
+        if self.rect_.collidepoint(pos):
+            self.on_clicked()
+        pass
+
+
+# テキスト付ボタン要素クラス
+class UITextedButton(UIButton):
+    content: str = ""
+    textcolor: ColorRGB = ColorRGB(0, 0, 0)
+    testpos: Vector2 = Vector2(0, 0)
+    uitext: UIText = None
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.uitext = UIText(owner)
+        self.uitext.use_percentpos = False
+
+    def draw(self):
+        super().draw()
+        pos = Vector2(0, 0)
+        pos.x = self.pos_.x + self.testpos.x
+        pos.y = self.pos_.y
+        self.uitext.pos = pos
+        self.uitext.draw()
+        pass
 
 
 # UI要素クラスを継承した進捗バークラス
@@ -404,6 +494,7 @@ class PlayerUI(UI):
     bulletguage: UIBulletGauge = None  # 残弾数ゲージ要素
     scoretext: UIText = None  # スコアテキスト
     pausetext: UIText = None  # 一時停止時のテキスト
+    button: UIButton = None
 
     def __init__(self, owner):
         super().__init__(owner)
@@ -420,6 +511,7 @@ class PlayerUI(UI):
         self.hpbar.size = Vector2(450, 30)
         self.hpbar.hp_text_pos_relative = Vector2(10, 0)
         self.hpbar.hp_UItext_.fontsize = 52
+        self.addto_viewport(self.hpbar)
 
         # 残弾数ゲージ要素
         self.bulletgauge = UIBulletGauge(self)
@@ -433,18 +525,27 @@ class PlayerUI(UI):
         self.bulletgauge.size = Vector2(175, 10)
         self.bulletgauge.bullets_textpos_relative = Vector2(10, -4)
         self.bulletgauge.bullets_UIText_.fontsize = 24
+        self.addto_viewport(self.bulletgauge)
 
         self.scoretext = UIText(self)
         self.scoretext.pos = Vector2(0.05, 0.05)
         self.scoretext.use_percentpos = True
         self.scoretext.content = "0"
         self.scoretext.fontsize = 32
+        self.addto_viewport(self.scoretext)
 
         self.pausetext = UIText(self)
         self.pausetext.pos = Vector2(0.45, 0.45)
         self.pausetext.use_percentpos = True
         self.pausetext.content = "Pause"
         self.pausetext.fontsize = 64
+        self.addto_viewport(self.pausetext)
+
+        self.button = UIButton(self)
+        self.button.pos = Vector2(0.5, 0.5)
+        self.button.use_percentpos = True
+        self.button.size = Vector2(100, 20)
+        self.addto_viewport(self.button)
 
         pass
 
@@ -468,6 +569,8 @@ class PlayerUI(UI):
 
         if me.world.get_pause():
             self.pausetext.draw()
+
+        self.button.draw()
         pass
 
 
@@ -538,7 +641,7 @@ class Pawn(Actor):
         pass
 
     # マウスのボタンが離された際の処理
-    def on_mouse_up(self):
+    def on_mouse_up(self, pos):
         pass
 
     # キーが押された際の処理
@@ -1013,9 +1116,30 @@ class Character(Pawn):
                 direction = Vector2.rotate(direction, -90)
                 self.moveInput = direction
 
-
-
     def on_mouse_down(self, pos):
+        super().on_mouse_down(pos)
+        if self.ui is not None:
+            self.ui.on_mouse_down(pos)
+            pass
+        pass
+
+    def on_mouse_up(self, pos):
+        super().on_mouse_up(pos)
+        if self.ui is not None:
+            self.ui.on_mosue_up(pos)
+            pass
+        pass
+
+    def on_key_down(self, key):
+        super().on_key_down(key)
+        if self.ui is not None:
+            self.ui.on_key_down(key)
+        pass
+
+    def on_key_up(self, key):
+        super().on_key_up(key)
+        if self.ui is not None:
+            self.ui.on_key_up(key)
         pass
 
     # オブジェクト同士で衝突があった時に呼ばれる
@@ -1106,6 +1230,9 @@ class Player(Character):
 
     def on_mouse_down(self, pos):
         super().on_mouse_down(pos)
+        if self.world.get_pause():
+            return
+
         self.mousepressed_ = True
         mousepos = Vector2(pos[0], pos[1])
         """print("Pawns(Before):")
@@ -1118,12 +1245,13 @@ class Player(Character):
         print(f"capacity: {self.weapon.capacity_}")
         pass
 
-    def on_mouse_up(self):
-        super().on_mouse_up()
+    def on_mouse_up(self, pos):
+        super().on_mouse_up(pos)
         self.mousepressed_ = False
         pass
 
     def on_key_down(self, key):
+        super().on_key_down(key)
         if key == pygame.K_ESCAPE:
             self.world.set_pause(not self.world.get_pause())
         pass
@@ -1558,8 +1686,8 @@ def on_mouse_down(pos):
     pass
 
 
-def on_mouse_up():
-    world.on_mouseup_input()
+def on_mouse_up(pos):
+    world.on_mouseup_input(pos)
 
 
 def on_key_down(key):
