@@ -591,9 +591,10 @@ class Pawn(Actor):
         self.world = world
         world.addto_world(self)
 
-    # ワールドから取り除きます(オブジェクトの破棄は行われません)
+    # ワールドから取り除きます
     def destroy(self):
         self.world.delete_pawn(self)
+        del self
 
     # 更新処理
     def update(self, dt):
@@ -1160,7 +1161,7 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = SMG(self)
+        self.weapon = Shotgun(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
