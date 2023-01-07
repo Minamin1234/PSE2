@@ -723,7 +723,40 @@ class SMG(Weapon):
         pass
 
     def fire(self, at: Vector2):
+        if not self.is_reloading_:  # 装填中でなければ
+            if self.capacity_ > 0:  # 弾が残っていれば
+                if self.is_ready:  # 武器が発射可能であれば
+                    blt = Bullet(self.owner)  # 弾オブジェクトの生成
+                    blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
+                    blt.spawn(self.owner.world)  # 弾をワールドに生成する
+                    blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
+                    direction = Vector2.get_angle2(self.owner.location, at)  # 弾の角度(発砲者とマウスカーソル位置のなす角度)
+                    direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
+                    if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
+                        direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
+                    blt.set_direction(direction)  # 飛翔方向を設定
+                    blt.location += direction * 10
+                    self.capacity_ -= 1  # 現在の装弾数を減らす
+                    sounds.smg_shot.play()  # 発砲音を鳴らす
+                    self.is_ready = False
+                    clock.schedule_unique(self.on_after_fire, self.fire_rate)
+                pass
+            else:  # 弾が残っていない時
+                sounds.smg_empty.play()  # 空撃ち音を鳴らす
+            pass
         pass
+
+    def reload(self):
+        if not self.is_reloading_:  # 装填中でなければ
+            self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
+            sounds.smg_reload.play()  # 装填音を鳴らす
+            clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
+        pass
+
+    def on_ended_reload(self):
+        sounds.smg_attach.play()  # 銃スライド音を鳴らす
+        self.capacity_ = self.capacity  # 現在の装填数を補充する
+        self.is_reloading_ = False  # 装填中であるかどうかを設定する
 
 
 # ショットガン(一度の射撃で複数弾が扇状に拡散する銃)
@@ -935,7 +968,7 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = Shotgun(self)
+        self.weapon = SMG(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
