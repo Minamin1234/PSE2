@@ -175,15 +175,17 @@ class Vector2:
 class World:
     Pawns = []  # ワールド内のオブジェクト
     Map = None  # ワールドのマップ
+    ispause_: bool = False  # 更新を一時停止するかどうか
 
     def __init__(self):
         pass
 
     # ワールド内全てのオブジェクトとマップを更新します
     def update(self, dt):
-        for p in self.Pawns:
-            p.update(dt)
-        self.Map.update(dt)
+        if not self.ispause_:
+            for p in self.Pawns:
+                p.update(dt)
+            self.Map.update(dt)
 
     # ワールド内全てのオブジェクトの描画処理を呼び出します
     def draw(self):
@@ -200,6 +202,20 @@ class World:
             pw: Pawn = p
             pw.on_mouse_up()
 
+    def on_key_down(self, key):
+        for p in self.Pawns:
+            pw: Pawn = p
+            pw.on_key_down(key)
+            pass
+        pass
+
+    def on_key_up(self, key):
+        for p in self.Pawns:
+            pw: Pawn = p
+            pw.on_key_up(key)
+            pass
+        pass
+
     # 指定したオブジェクトをワールドに追加します
     def addto_world(self, pawn):
         self.Pawns.append(pawn)
@@ -213,6 +229,10 @@ class World:
     # マップを設定します
     def set_map(self, newmap):
         self.Map = newmap
+
+    # オブジェクトの更新処理の停止を設定します
+    def set_pause(self, pause: bool):
+        self.ispause_ = pause
 
 
 # UIの定義したクラス
@@ -498,11 +518,20 @@ class Pawn(Actor):
     def key_input(self, keys):
         pass
 
-    # マウスのボタンクリックされた際の処理
+    # マウスのボタンが押された際の処理
     def on_mouse_down(self, pos):
         pass
 
+    # マウスのボタンが離された際の処理
     def on_mouse_up(self):
+        pass
+
+    # キーが押された際の処理
+    def on_key_down(self, key):
+        pass
+
+    # キーが離された際の処理
+    def on_key_up(self, key):
         pass
 
     # 枠に衝突しているかどうかを判定します
@@ -1055,8 +1084,6 @@ class Player(Character):
 
         pressed_f = False
         if keys.f:
-            print("f")
-            self.world.Map.set_tocenter(Vector2(100, 100))
             pressed_f = True
         else:
             pressed_r = False
@@ -1074,10 +1101,18 @@ class Player(Character):
         for i in self.world.Pawns:
             print(i)"""
         print(f"capacity: {self.weapon.capacity_}")
+        pass
 
     def on_mouse_up(self):
         super().on_mouse_up()
         self.mousepressed_ = False
+        pass
+
+    def on_key_down(self, key):
+        print("keydown")
+        if key == pygame.K_ESCAPE:
+            self.world.set_pause(not self.world.ispause_)
+        pass
 
     def on_hit(self, actor):
         blt: Bullet = actor
@@ -1508,7 +1543,19 @@ def on_mouse_down(pos):
     world.on_mousedown_input(pos)
     pass
 
+
 def on_mouse_up():
     world.on_mouseup_input()
+
+
+def on_key_down(key):
+    world.on_key_down(key)
+    pass
+
+
+def on_key_up(key):
+    world.on_key_up(key)
+    pass
+
 
 pgzrun.go()
