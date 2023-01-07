@@ -378,6 +378,7 @@ class UIBulletGauge(UIProgressBar):
 class PlayerUI(UI):
     hpbar: UIHPBar = None  # HPバー要素
     bulletguage: UIBulletGauge = None  # 残弾数ゲージ要素
+    scoretext: UIText = None  # スコアテキスト
 
     def __init__(self, owner):
         super().__init__(owner)
@@ -408,6 +409,11 @@ class PlayerUI(UI):
         self.bulletgauge.bullets_textpos_relative = Vector2(10, -4)
         self.bulletgauge.bullets_UIText_.fontsize = 24
 
+        self.scoretext = UIText(self)
+        self.scoretext.pos = Vector2(0.05, 0.05)
+        self.scoretext.use_percentpos = True
+        self.scoretext.content = "0"
+
         pass
 
     def draw(self):
@@ -424,6 +430,9 @@ class PlayerUI(UI):
         self.bulletgauge.bullets = me.weapon.capacity_
         self.bulletgauge.percent = me.weapon.capacity_ / me.weapon.capacity
         self.bulletgauge.draw()
+
+        self.scoretext.content = f"Score: {str(me.score_)}"
+        self.scoretext.draw()
         pass
 
 
@@ -980,6 +989,9 @@ class Character(Pawn):
 # プレイヤー
 class Player(Character):
     mousepressed_: bool = False  # 現在、マウスのボタンが押された状態かどうか
+    score_max_multiply: int = 5  # スコア加点時の最大乗数
+    score_bonus_percent: float = 0.2  # ボーナス加点される確率
+    score_: int = 0  # 現在のスコア
 
     def __init__(self):
         self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
@@ -988,7 +1000,7 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = HandGun(self)
+        self.weapon = SMG(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
@@ -1076,6 +1088,16 @@ class Player(Character):
         if self.hp_ <= 0:
             self.destroy()
 
+        pass
+
+    # スコアを加点します(hp: 倒した敵のHP)
+    def apply_score(self, hp):
+        multply = random.uniform(1, self.score_max_multiply)  # ランダムな乗数を決める
+        score = int(hp * multply)  # 決めた乗数でHPをかけた値がスコア
+        if Util.random_bool(self.score_bonus_percent):  # ボーナスを一定の確率で適用する
+            score = int(score * multply)
+        self.score_ += score
+        print(self.score_)
         pass
 
 
@@ -1192,6 +1214,8 @@ class Enemy(Character):
         self.hp_ -= dmg
         if self.hp_ <= 0:
             self.destroy()
+            bullet.owner.apply_score(self.HP)
+
         print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
 
 
@@ -1460,8 +1484,11 @@ world.set_map(mp)
 
 player.location = Vector2.get_vector(mp.center_)
 enemy = Enemy()
+enemy2 = Enemy()
 enemy.location = Vector2(150, 150)
+enemy2.location = Vector2(400, 150)
 enemy.spawn(world)
+enemy2.spawn(world)
 player.spawn(world)
 mp.set_tocenter(Vector2(10, 800))
 
