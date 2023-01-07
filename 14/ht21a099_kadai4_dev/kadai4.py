@@ -193,7 +193,12 @@ class World:
 
     def on_mousedown_input(self, pos):
         for p in self.Pawns:
-            p.mouse_down_input(pos)
+            p.on_mouse_down(pos)
+
+    def on_mouseup_input(self):
+        for p in self.Pawns:
+            pw: Pawn = p
+            pw.on_mouse_up()
 
     # 指定したオブジェクトをワールドに追加します
     def addto_world(self, pawn):
@@ -485,7 +490,10 @@ class Pawn(Actor):
         pass
 
     # マウスのボタンクリックされた際の処理
-    def mouse_down_input(self, pos):
+    def on_mouse_down(self, pos):
+        pass
+
+    def on_mouse_up(self):
         pass
 
     # 枠に衝突しているかどうかを判定します
@@ -550,6 +558,8 @@ class Bullet(Pawn):
         pass
 
     def bounce(self):
+        if not self.is_bounce:
+            self.destroy()
         if self.bounces_ >= self.bounces:
             self.destroy()
         self.bounces_ += 1
@@ -560,6 +570,7 @@ class Bullet(Pawn):
         worldpos = self.world.Map.get_worldlocation(self.location)
         world_width = self.world.Map.width_
         world_height = self.world.Map.height_
+
         if worldpos.x >= world_width:
             self.direction.x = -self.direction.x
             self.bounce()
@@ -601,6 +612,14 @@ class ShotShell(Bullet):
         self.velocity = 20
         self.owner = owner
         pass
+
+
+class SMGShell(Bullet):
+    def __init__(self, owner: Pawn):
+        super().__init__(owner)
+        self.velocity = 30
+        self.is_bounce = False
+        self.hit_once = True
 
 
 # 武器クラス
@@ -715,18 +734,18 @@ class SMG(Weapon):
         super().__init__(owner)
         self.capacity = 30
         self.capacity_ = self.capacity
-        self.fire_rate = 0.15
+        self.fire_rate = 0.05
         self.reload_time = 3.0
         self.diffusion = 0.5
         self.max_diffangle = 20
-        self.fire_mode = self.FIRE_MODE_SINGLE
+        self.fire_mode = self.FIRE_MODE_AUTO
         pass
 
     def fire(self, at: Vector2):
         if not self.is_reloading_:  # 装填中でなければ
             if self.capacity_ > 0:  # 弾が残っていれば
                 if self.is_ready:  # 武器が発射可能であれば
-                    blt = Bullet(self.owner)  # 弾オブジェクトの生成
+                    blt = SMGShell(self.owner)  # 弾オブジェクトの生成
                     blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
                     blt.spawn(self.owner.world)  # 弾をワールドに生成する
                     blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
@@ -943,7 +962,7 @@ class Character(Pawn):
 
 
 
-    def mouse_down_input(self, pos):
+    def on_mouse_down(self, pos):
         pass
 
     # オブジェクト同士で衝突があった時に呼ばれる
@@ -960,6 +979,7 @@ class Character(Pawn):
 
 # プレイヤー
 class Player(Character):
+    mousepressed_: bool = False  # 現在、マウスのボタンが押された状態かどうか
 
     def __init__(self):
         self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
@@ -968,7 +988,7 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = SMG(self)
+        self.weapon = HandGun(self)
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
@@ -982,6 +1002,10 @@ class Player(Character):
 
         lookat = Vector2.get_angle2(self.location, mousepos)
         self.angle = -lookat
+        if self.mousepressed_ and \
+                self.weapon.fire_mode == Weapon.FIRE_MODE_AUTO and \
+            not self.weapon.isempty():
+            self.weapon.fire(mousepos)
 
     def key_input(self, keys):
         pressed_r = False
@@ -1026,8 +1050,9 @@ class Player(Character):
             pressed_r = False
 
 
-    def mouse_down_input(self, pos):
-        super().mouse_down_input(pos)
+    def on_mouse_down(self, pos):
+        super().on_mouse_down(pos)
+        self.mousepressed_ = True
         mousepos = Vector2(pos[0], pos[1])
         """print("Pawns(Before):")
         for i in self.world.Pawns:
@@ -1037,6 +1062,10 @@ class Player(Character):
         for i in self.world.Pawns:
             print(i)"""
         print(f"capacity: {self.weapon.capacity_}")
+
+    def on_mouse_up(self):
+        super().on_mouse_up()
+        self.mousepressed_ = False
 
     def on_hit(self, actor):
         blt: Bullet = actor
@@ -1452,5 +1481,7 @@ def on_mouse_down(pos):
     world.on_mousedown_input(pos)
     pass
 
+def on_mouse_up():
+    world.on_mouseup_input()
 
 pgzrun.go()
