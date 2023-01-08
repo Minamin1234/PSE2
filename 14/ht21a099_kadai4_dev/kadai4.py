@@ -488,6 +488,15 @@ class UIBulletGauge(UIProgressBar):
                              Vector2.get_tuple(pos_upper), 1)
 
 
+# メニューUIクラス
+class MenuUI(UI):
+    def __init__(self, owner):
+        super().__init__(owner)
+
+    def draw(self):
+        super().draw()
+
+
 # プレイヤーのUI
 class PlayerUI(UI):
     hpbar: UIHPBar = None  # HPバー要素
@@ -1146,6 +1155,10 @@ class Character(Pawn):
     def key_input(self, keys):
         super().key_input(keys)
 
+    # UIを差し替えます
+    def swap_ui(self, newui: UI):
+        self.ui = newui
+
 
 # プレイヤー
 class Player(Character):
@@ -1547,149 +1560,185 @@ class Map:
         #print(pos)
         return pos
 
-# マップサイズ
-mapsize = Vector2(15, 15)
 
-# 地面オブジェクトの配置
-groundmap = [
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-    [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-]
+# ゲームを実行/管理するクラス
+class Game:
+    def __init__(self):
+        self.mapsize = Vector2(0, 0)
+        self.groundmap= []
+        self.groundstylemap = []
+        self.groundstyles = []
+        self.wallmap = []
+        self.wallstylemap = []
+        self.wallstyles = []
+        self.world: World = None
+        self.map: Map = None
+        self.player: Player = None
+        self.enemy: Enemy = None
+        self.enemy2: Enemy = None
 
-# 地面のスタイル割り当て
-groundstylemap = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
+        pass
 
-# 割り当てと使用する地面画像一覧
-groundstyles = [
-    "tile_01",
-    "tile_05"
-]
+    def initialize(self):
+        self.mapsize = Vector2(15, 15)  # マップサイズ
+        self.groundmap = [  # 地面オブジェクトの配置
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+        ]
+        self.groundstylemap = [  # 地面のスタイル割り当て
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+        self.groundstyles = [  # 割り当てと使用する地面画像一覧
+            "tile_01",
+            "tile_05"
+        ]
+        self.wallmap = [  # 壁障害物の配置
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, L, R, N, U, CUL, CUR, N, N, N, N, N],
+            [N, N, N, N, N, N, N, D, CDL, CDR, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, L, R, L, R, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
+            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
+        ]
+        self.wallstylemap = [  # 壁障害物の種類の割り当て
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+        self.wallstyles = [  # 割り当てとその使用する種類
+            WallStyleOrange()
+        ]
 
-# 壁障害物の配置
-wallmap = [
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, L, R, N, U, CUL, CUR, N, N, N, N, N],
-    [N, N, N, N, N, N, N, D, CDL, CDR, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, L, R, L, R, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
-    [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
-]
+        self.world = World()
+        self.player = Player()
+        self.map = Map(self.world, self.player)
+        self.map.size_ = self.mapsize
+        self.map.ground_map = self.groundmap
+        self.map.ground_style_map = self.groundstylemap
+        self.map.ground_styles = self.groundstyles
+        self.map.wallobj_map = self.wallmap
+        self.map.wallobj_style_map = self.wallstylemap
+        self.map.wallobj_styles = self.wallstyles
+        self.map.generate()
+        print(f"width: {self.map.width_}, height: {self.map.height_}")
+        self.world.set_map(self.map)
 
-# 壁障害物の種類の割り当て
-wallstylemap = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
+        self.player.location = Vector2.get_vector(self.map.center_)
+        self.enemy = Enemy()
+        self.enemy2 = Enemy()
+        self.enemy.location = Vector2(150, 150)
+        self.enemy2.location = Vector2(400, 150)
+        self.enemy.spawn(self.world)
+        self.enemy2.spawn(self.world)
+        self.player.spawn(self.world)
+        self.map.set_tocenter(Vector2(10, 800))
+        pass
 
-# 割り当てとその使用する種類
-wallstyles = [
-    WallStyleOrange()
-]
+    def draw(self):
+        screen.clear()
+        self.world.draw()
+        pass
 
-world = World()
-player = Player()
+    def update(self, dt):
+        self.world.update(dt)
+        pass
 
-mp = Map(world, player)
-mp.size_ = mapsize
-mp.ground_map = groundmap
-mp.ground_style_map = groundstylemap
-mp.ground_styles = groundstyles
-mp.wallobj_map = wallmap
-mp.wallobj_style_map = wallstylemap
-mp.wallobj_styles = wallstyles
-mp.generate()
-print(f"width: {mp.width_}, height: {mp.height_}")
-world.set_map(mp)
+    def on_mouse_down(self, pos):
+        self.world.on_mousedown_input(pos)
+        pass
 
-player.location = Vector2.get_vector(mp.center_)
-enemy = Enemy()
-enemy2 = Enemy()
-enemy.location = Vector2(150, 150)
-enemy2.location = Vector2(400, 150)
-enemy.spawn(world)
-enemy2.spawn(world)
-player.spawn(world)
-mp.set_tocenter(Vector2(10, 800))
+    def on_mouse_up(self, pos):
+        self.world.on_mouseup_input(pos)
+        pass
+
+    def on_key_down(self, key):
+        self.world.on_key_down(key)
+        pass
+
+    def on_key_up(self, key):
+        self.world.on_key_up(key)
+        pass
+
+
+game = Game()  # ゲームインスタンス
+game.initialize()  # 初期化
 
 
 def draw():
-    screen.clear()
-    world.draw()
+    game.draw()
     pass
 
 
 def update(dt):
-    world.update(dt)
+    game.update(dt)
     pass
 
 
 def on_mouse_down(pos):
-    world.on_mousedown_input(pos)
+    game.on_mouse_down(pos)
     pass
 
 
 def on_mouse_up(pos):
-    world.on_mouseup_input(pos)
+    game.on_mouse_up(pos)
+    pass
 
 
 def on_key_down(key):
-    world.on_key_down(key)
+    game.on_key_down(key)
     pass
 
 
 def on_key_up(key):
-    world.on_key_up(key)
+    game.on_key_up(key)
     pass
 
 
