@@ -1,0 +1,3 @@
+taro	10
+jiro	20
+saburo	30
