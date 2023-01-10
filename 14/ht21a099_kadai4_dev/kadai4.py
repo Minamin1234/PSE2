@@ -173,11 +173,13 @@ class Vector2:
 
 # ゲーム内全てのオブジェクトを管理するためのクラス
 class World:
+    owner = None  # このワールドを所有するゲームクラス
     Pawns = []  # ワールド内のオブジェクト
     Map = None  # ワールドのマップ
     ispause_: bool = False  # 更新を一時停止するかどうか
 
-    def __init__(self):
+    def __init__(self, owner):
+        self.owner = owner
         pass
 
     # ワールド内全てのオブジェクトとマップを更新します
@@ -237,6 +239,12 @@ class World:
     # 現在、オブジェクトの更新処理が一時停止しているかどうかを返す
     def get_pause(self):
         return self.ispause_
+
+    # ゲームを初期化する
+    def gameinitalize(self):
+        gm: Game = self.owner
+        gm.initialize()
+        return
 
 
 # UIの定義したクラス
@@ -1151,6 +1159,10 @@ class Character(Pawn):
     # 弾によるダメージが適用される際に呼ばれる
     def apply_damage(self, bullet: Bullet):
         pass
+
+    # スコアを与える際に呼ばれる
+    def apply_score(self, hp: int):
+        pass
     
     def key_input(self, keys):
         super().key_input(keys)
@@ -1229,6 +1241,8 @@ class Player(Character):
 
         pressed_f = False
         if keys.f:
+            if not pressed_f:
+                pass
             pressed_f = True
         else:
             pressed_r = False
@@ -1576,10 +1590,11 @@ class Game:
         self.player: Player = None
         self.enemy: Enemy = None
         self.enemy2: Enemy = None
-
+        self.isloading: bool = False
         pass
 
     def initialize(self):
+        self.isloading = True
         self.mapsize = Vector2(15, 15)  # マップサイズ
         self.groundmap = [  # 地面オブジェクトの配置
             [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
@@ -1657,7 +1672,7 @@ class Game:
             WallStyleOrange()
         ]
 
-        self.world = World()
+        self.world = World(self)
         self.player = Player()
         self.map = Map(self.world, self.player)
         self.map.size_ = self.mapsize
@@ -1680,31 +1695,38 @@ class Game:
         self.enemy2.spawn(self.world)
         self.player.spawn(self.world)
         self.map.set_tocenter(Vector2(10, 800))
+        self.isloading = False
         pass
 
     def draw(self):
         screen.clear()
-        self.world.draw()
+        if not self.isloading:
+            self.world.draw()
         pass
 
     def update(self, dt):
-        self.world.update(dt)
+        if not self.isloading:
+            self.world.update(dt)
         pass
 
     def on_mouse_down(self, pos):
-        self.world.on_mousedown_input(pos)
+        if not self.isloading:
+            self.world.on_mousedown_input(pos)
         pass
 
     def on_mouse_up(self, pos):
-        self.world.on_mouseup_input(pos)
+        if not self.isloading:
+            self.world.on_mouseup_input(pos)
         pass
 
     def on_key_down(self, key):
-        self.world.on_key_down(key)
+        if not self.isloading:
+            self.world.on_key_down(key)
         pass
 
     def on_key_up(self, key):
-        self.world.on_key_up(key)
+        if not self.isloading:
+            self.world.on_key_up(key)
         pass
 
 
