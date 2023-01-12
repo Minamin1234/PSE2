@@ -443,7 +443,7 @@ class UITextedButton(UIButton):
 class UIProgressBar(UIElement):
     percent: float = 1.0  # 進捗率(1.0で満たされ、0.0は何もなし)
     filledcolor: ColorRGB = ColorRGB(0, 0, 0)  # 進捗が満たされた状態のカラー
-    backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # 進捗が満たレテいない状態(背景)のカラー
+    backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # 進捗が満たされていない状態(背景)のカラー
 
     def __init__(self, owner: UI):
         super().__init__(owner)
@@ -562,7 +562,6 @@ class MenuUI(UI):
 
     def on_clicked_restart(self, sender):
         s: UITextedButton = sender
-        print(s.uitext.content)
         pass
 
 
