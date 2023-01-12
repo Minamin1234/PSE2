@@ -253,7 +253,7 @@ class UI:
     center_: Vector2 = Vector2(0, 0)
     elements_: list = []
 
-    # 初期化の処理について記述する
+    # 初期化の処理について記述する  注)UI要素はelementsに追加すること！
     def __init__(self, owner):
         self.owner = owner
         self.center_ = Vector2(0, 0)
@@ -300,6 +300,7 @@ class UIElement:
     owner: UI = None  # 所有者(UIクラス)
     pos: Vector2 = Vector2(0, 0)  # 位置
     use_percentpos: bool = False  # 位置を画面サイズの比で指定するかどうか
+    is_center: bool = False
     size: Vector2 = Vector2(0, 0)  # 要素のサイズ
     pos_: Vector2 = Vector2(0, 0)  # 配置時のサイズ
 
@@ -309,6 +310,9 @@ class UIElement:
             self.pos_ = self.get_percentpos()  # 配置位置を求める
         else:  # 画面座標で指定する場合
             self.pos_ = Vector2.get_vector(self.pos)
+        if self.is_center:
+            self.pos_.x = self.pos_.x - (self.size.x / 2)
+            self.pos_.y = self.pos_.y + (self.size.y / 2)
         pass
 
     def draw(self):
@@ -316,6 +320,10 @@ class UIElement:
             self.pos_ = self.get_percentpos()
         else:
             self.pos_ = Vector2.get_vector(self.pos)
+
+        if self.is_center:
+            self.pos_.x = self.pos_.x - (self.size.x / 2)
+            self.pos_.y = self.pos_.y + (self.size.y / 2)
         pass
 
     # 画面サイズの比から位置を求める
@@ -357,6 +365,7 @@ class UIText(UIElement):
 class UIButton(UIElement):
     backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # ボタンのカラー
     rect_: Rect = None  # ボタンの四角形オブジェクト
+    on_click = None  # ボタンが押された際の処理関数
 
     def __init__(self, owner: UI):
         super().__init__(owner)
@@ -371,6 +380,8 @@ class UIButton(UIElement):
 
     # ボタンが押された時の処理
     def on_clicked(self):
+        if not self.on_click is None and callable(self.on_click):
+            self.on_click(self)
         pass
 
     def on_mouse_down(self, pos):
@@ -381,21 +392,22 @@ class UIButton(UIElement):
 
 # テキスト付ボタン要素クラス
 class UITextedButton(UIButton):
-    content: str = ""
     textcolor: ColorRGB = ColorRGB(0, 0, 0)
-    testpos: Vector2 = Vector2(0, 0)
+    textpos: Vector2 = Vector2(0, 0)
     uitext: UIText = None
 
     def __init__(self, owner: UI):
         super().__init__(owner)
         self.uitext = UIText(owner)
+        self.uitext.size = self.size
         self.uitext.use_percentpos = False
+        self.uitext.is_center = True
 
     def draw(self):
         super().draw()
         pos = Vector2(0, 0)
-        pos.x = self.pos_.x + self.testpos.x
-        pos.y = self.pos_.y
+        pos.x = self.pos_.x + self.textpos.x
+        pos.y = self.pos_.y + self.textpos.y
         self.uitext.pos = pos
         self.uitext.draw()
         pass
@@ -498,11 +510,55 @@ class UIBulletGauge(UIProgressBar):
 
 # メニューUIクラス
 class MenuUI(UI):
+    buttoncolor: ColorRGB = ColorRGB(120, 120, 120)
+
     def __init__(self, owner):
         super().__init__(owner)
+        self.buttoncolor = ColorRGB(120, 120, 120)
+        self.btn_restart = UITextedButton(self)
+        self.btn_restart.on_click = self.on_clicked_restart
+        self.btn_restart.pos = Vector2(0.5, 0.5)
+        self.btn_restart.use_percentpos = True
+        self.btn_restart.size = Vector2(150, 30)
+        self.btn_restart.backgroundcolor = self.buttoncolor
+        self.btn_restart.uitext.content = "restart"
+        self.btn_restart.uitext.fontsize = 24
+        self.btn_restart.uitext.is_center = True
+        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 2, 0)
+        self.addto_viewport(self.btn_restart)
+
+        self.btn_backtogame = UITextedButton(self)
+        self.btn_backtogame.on_click = self.on_clicked_backtogame
+        self.btn_backtogame.pos = Vector2(0.5, 0.55)
+        self.btn_backtogame.use_percentpos = True
+        self.btn_backtogame.size = Vector2(150, 30)
+        self.btn_backtogame.backgroundcolor = self.buttoncolor
+        self.btn_backtogame.uitext.content = "back"
+        self.btn_backtogame.uitext.fontsize = 24
+        self.btn_backtogame.uitext.is_center = True
+        self.btn_backtogame.textpos = Vector2(self.btn_backtogame.size.x / 2, 0)
+        self.addto_viewport(self.btn_backtogame)
+        pass
 
     def draw(self):
         super().draw()
+        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 4, 0)
+        self.btn_restart.draw()
+
+        self.btn_backtogame.textpos = Vector2(self.btn_backtogame.size.x / 4, 0)
+        self.btn_backtogame.draw()
+        pass
+
+    def on_clicked_restart(self, sender):
+        s: UITextedButton = sender
+        print(s.uitext.content)
+        pass
+
+    def on_clicked_backtogame(self, sender):
+        s: UITextedButton = sender
+        me: Player = self.owner
+        me.show_menu()
+        pass
 
 
 # プレイヤーのUI
@@ -1178,6 +1234,8 @@ class Player(Character):
     score_max_multiply: int = 5  # スコア加点時の最大乗数
     score_bonus_percent: float = 0.2  # ボーナス加点される確率
     score_: int = 0  # 現在のスコア
+    ui_main: UI = None  # ゲーム中のUI
+    ui_pause: UI = None  # 一時停止中のUI
 
     def __init__(self):
         self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
@@ -1190,7 +1248,9 @@ class Player(Character):
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
-        self.ui = PlayerUI(self)
+        self.ui_main = PlayerUI(self)
+        self.ui_pause = MenuUI(self)
+        self.ui = self.ui_main
 
     def update(self, dt):
         super().update(dt)
@@ -1255,13 +1315,7 @@ class Player(Character):
 
         self.mousepressed_ = True
         mousepos = Vector2(pos[0], pos[1])
-        """print("Pawns(Before):")
-        for i in self.world.Pawns:
-            print(i)"""
         self.weapon.fire(mousepos)
-        """print("Pawns(After):")
-        for i in self.world.Pawns:
-            print(i)"""
         print(f"capacity: {self.weapon.capacity_}")
         pass
 
@@ -1272,8 +1326,8 @@ class Player(Character):
 
     def on_key_down(self, key):
         super().on_key_down(key)
-        if key == pygame.K_ESCAPE:
-            self.world.set_pause(not self.world.get_pause())
+        if key == pygame.K_ESCAPE:  # Escを押した時の挙動
+            self.show_menu()
         pass
 
     def on_hit(self, actor):
@@ -1295,6 +1349,16 @@ class Player(Character):
             score = int(score * multply)
         self.score_ += score
         print(self.score_)
+        pass
+
+    # メニューの表示/非表示を切り替える
+    def show_menu(self):
+        if not self.world.get_pause():
+            self.world.set_pause(True)
+            self.swap_ui(self.ui_pause)
+        else:
+            self.world.set_pause(False)
+            self.swap_ui(self.ui_main)
         pass
 
 
