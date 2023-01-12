@@ -359,6 +359,32 @@ class UIText(UIElement):
     def draw(self):
         super().draw()
         screen.draw.text(self.content, Vector2.get_tuple(self.pos_), fontsize=self.fontsize)
+        pass
+
+
+# テキスト入力/表示が可能なテキストボックス
+class UITextBox(UIText):
+    is_focus: bool = False  # テキストボックスがフォーカスされているかどうか
+
+    def __init__(self, owner: UI):
+        super().__init__(owner)
+        self.is_focus = False
+        pass
+
+    def draw(self):
+        super().draw()
+        pass
+
+    def on_key_down(self, key):
+        if self.is_focus:
+            if key == pygame.K_RETURN:
+                self.is_focus = False
+            elif key == pygame.K_BACKSPACE:
+                self.content = self.content[:-1]
+            else:
+                if 0 <= key <= 0x10ffff:
+                    self.content += chr(key)
+        pass
 
 
 # ボタン要素クラス
@@ -517,47 +543,26 @@ class MenuUI(UI):
         self.buttoncolor = ColorRGB(120, 120, 120)
         self.btn_restart = UITextedButton(self)
         self.btn_restart.on_click = self.on_clicked_restart
-        self.btn_restart.pos = Vector2(0.5, 0.5)
+        self.btn_restart.pos = Vector2(0.45, 0.5)
         self.btn_restart.use_percentpos = True
         self.btn_restart.size = Vector2(150, 30)
         self.btn_restart.backgroundcolor = self.buttoncolor
         self.btn_restart.uitext.content = "restart"
         self.btn_restart.uitext.fontsize = 24
         self.btn_restart.uitext.is_center = True
-        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 2, 0)
+        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 4, 0)
         self.addto_viewport(self.btn_restart)
-
-        self.btn_backtogame = UITextedButton(self)
-        self.btn_backtogame.on_click = self.on_clicked_backtogame
-        self.btn_backtogame.pos = Vector2(0.5, 0.55)
-        self.btn_backtogame.use_percentpos = True
-        self.btn_backtogame.size = Vector2(150, 30)
-        self.btn_backtogame.backgroundcolor = self.buttoncolor
-        self.btn_backtogame.uitext.content = "back"
-        self.btn_backtogame.uitext.fontsize = 24
-        self.btn_backtogame.uitext.is_center = True
-        self.btn_backtogame.textpos = Vector2(self.btn_backtogame.size.x / 2, 0)
-        self.addto_viewport(self.btn_backtogame)
         pass
 
     def draw(self):
         super().draw()
-        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 4, 0)
+        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 3.2, 0)
         self.btn_restart.draw()
-
-        self.btn_backtogame.textpos = Vector2(self.btn_backtogame.size.x / 4, 0)
-        self.btn_backtogame.draw()
         pass
 
     def on_clicked_restart(self, sender):
         s: UITextedButton = sender
         print(s.uitext.content)
-        pass
-
-    def on_clicked_backtogame(self, sender):
-        s: UITextedButton = sender
-        me: Player = self.owner
-        me.show_menu()
         pass
 
 
@@ -1307,16 +1312,14 @@ class Player(Character):
         else:
             pressed_r = False
 
-
     def on_mouse_down(self, pos):
         super().on_mouse_down(pos)
-        if self.world.get_pause():
-            return
 
         self.mousepressed_ = True
         mousepos = Vector2(pos[0], pos[1])
-        self.weapon.fire(mousepos)
-        print(f"capacity: {self.weapon.capacity_}")
+        if not self.world.get_pause():
+            self.weapon.fire(mousepos)
+            print(f"capacity: {self.weapon.capacity_}")
         pass
 
     def on_mouse_up(self, pos):
