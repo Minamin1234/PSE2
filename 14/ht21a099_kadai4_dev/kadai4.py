@@ -171,6 +171,35 @@ class Vector2:
         return reflect
 
 
+# スコアデータクラス
+class ScoreData:
+    playername: str = ""
+    score: int = 0
+    kills: int = 0
+    playerhp = 0
+    hits: int = 0
+
+    def __init__(self):
+        pass
+
+
+# スコア集計クラス
+class Totalizer:
+    scores_: dict = None
+
+    def __init__(self):
+        pass
+
+    def input(self, file: str):
+        pass
+
+    def add_scoredata(self, newdata: ScoreData):
+        pass
+
+    def output_scores(self, file: str):
+        pass
+
+
 # ゲーム内全てのオブジェクトを管理するためのクラス
 class World:
     owner = None  # このワールドを所有するゲームクラス
