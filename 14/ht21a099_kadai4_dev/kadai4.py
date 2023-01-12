@@ -365,6 +365,7 @@ class UIText(UIElement):
 # テキスト入力/表示が可能なテキストボックス
 class UITextBox(UIText):
     is_focus: bool = False  # テキストボックスがフォーカスされているかどうか
+    on_enter = None
 
     def __init__(self, owner: UI):
         super().__init__(owner)
@@ -379,6 +380,8 @@ class UITextBox(UIText):
         if self.is_focus:
             if key == pygame.K_RETURN:
                 self.is_focus = False
+                if self.on_enter is not None and callable(self.on_enter):
+                    self.on_enter(self)
             elif key == pygame.K_BACKSPACE:
                 self.content = self.content[:-1]
             else:
@@ -532,6 +535,46 @@ class UIBulletGauge(UIProgressBar):
                              self.bulletsgauge_linecolor.get_tuple(),
                              Vector2.get_tuple(pos_lower),
                              Vector2.get_tuple(pos_upper), 1)
+
+
+# プレイヤー名入力用UI
+class PlayerNameUI(UI):
+    t_caption: UIText = None
+    tb_textbox: UITextBox = None
+
+    def __init__(self, owner):
+        super().__init__(owner)
+        self.pos = Vector2(0.5, 0.5)
+        self.t_caption = UIText(self)
+        self.t_caption.content = "PlayerName: "
+        self.t_caption.fontsize = 64
+        self.t_caption.pos = Vector2(0.2, 0.5)
+        self.t_caption.use_percentpos = True
+        self.addto_viewport(self.t_caption)
+
+        self.tb_textbox = UITextBox(self)
+        self.tb_textbox.content = ""
+        self.tb_textbox.fontsize = 64
+        self.tb_textbox.pos = Vector2(0.5, 0.5)
+        self.tb_textbox.use_percentpos = True
+        self.tb_textbox.is_focus = True
+        self.tb_textbox.on_enter = self.on_enter
+        self.addto_viewport(self.tb_textbox)
+        pass
+
+    def draw(self):
+        super().draw()
+        self.t_caption.draw()
+        self.tb_textbox.draw()
+        pass
+
+    # Enterが押された時の処理
+    def on_enter(self, sender):
+        tb: UITextBox = sender
+        me: Player = self.owner
+        me.playername = tb.content
+        me.show_menu()
+        pass
 
 
 # メニューUIクラス
@@ -1222,6 +1265,7 @@ class Character(Pawn):
 
 # プレイヤー
 class Player(Character):
+    playername: str = ""
     mousepressed_: bool = False  # 現在、マウスのボタンが押された状態かどうか
     score_max_multiply: int = 5  # スコア加点時の最大乗数
     score_bonus_percent: float = 0.2  # ボーナス加点される確率
@@ -1324,12 +1368,13 @@ class Player(Character):
         super().on_key_down(key)
         if key == pygame.K_ESCAPE:  # Escを押した時の挙動
             self.show_menu()
-        c = chr(key)
-        if c.isdecimal():
-            i = int(c) - 1
-            if 0 <= i <= 9:
-                self.swap_weapon(i)
-                pass
+        if not self.world.get_pause():  # ワールドが一時停止状態でなければ
+            c = chr(key)
+            if c.isdecimal():
+                i = int(c) - 1
+                if 0 <= i <= 9:
+                    self.swap_weapon(i)
+                    pass
 
         pass
 
@@ -1768,6 +1813,8 @@ class Game:
         self.player.spawn(self.world)
         self.map.set_tocenter(Vector2(10, 800))
         self.isloading = False
+        self.player.swap_ui(PlayerNameUI(self.player))
+        self.world.set_pause(True)
         pass
 
     def draw(self):
