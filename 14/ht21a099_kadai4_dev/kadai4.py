@@ -540,28 +540,16 @@ class MenuUI(UI):
 
     def __init__(self, owner):
         super().__init__(owner)
-        self.buttoncolor = ColorRGB(120, 120, 120)
-        self.btn_restart = UITextedButton(self)
-        self.btn_restart.on_click = self.on_clicked_restart
-        self.btn_restart.pos = Vector2(0.45, 0.5)
-        self.btn_restart.use_percentpos = True
-        self.btn_restart.size = Vector2(150, 30)
-        self.btn_restart.backgroundcolor = self.buttoncolor
-        self.btn_restart.uitext.content = "restart"
-        self.btn_restart.uitext.fontsize = 24
-        self.btn_restart.uitext.is_center = True
-        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 4, 0)
-        self.addto_viewport(self.btn_restart)
+        self.maintext = UIText(self)
+        self.maintext.content = "Pause"
+        self.maintext.pos = Vector2(0.45, 0.5)
+        self.maintext.use_percentpos = True
+        self.maintext.fontsize = 64
         pass
 
     def draw(self):
         super().draw()
-        self.btn_restart.textpos = Vector2(self.btn_restart.size.x / 3.2, 0)
-        self.btn_restart.draw()
-        pass
-
-    def on_clicked_restart(self, sender):
-        s: UITextedButton = sender
+        self.maintext.draw()
         pass
 
 
@@ -1240,6 +1228,7 @@ class Player(Character):
     score_: int = 0  # 現在のスコア
     ui_main: UI = None  # ゲーム中のUI
     ui_pause: UI = None  # 一時停止中のUI
+    weapons: list = []
 
     def __init__(self):
         self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
@@ -1248,7 +1237,12 @@ class Player(Character):
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = Shotgun(self)
+        self.weapon = HandGun(self)
+        self.weapons = [
+            self.weapon,
+            Shotgun(self),
+            SMG(self)
+        ]
         self.Def_multiply = 0.5
         self.hp_ = self.HP
 
@@ -1330,6 +1324,13 @@ class Player(Character):
         super().on_key_down(key)
         if key == pygame.K_ESCAPE:  # Escを押した時の挙動
             self.show_menu()
+        c = chr(key)
+        if c.isdecimal():
+            i = int(c) - 1
+            if 0 <= i <= 9:
+                self.swap_weapon(i)
+                pass
+
         pass
 
     def on_hit(self, actor):
@@ -1361,6 +1362,13 @@ class Player(Character):
         else:
             self.world.set_pause(False)
             self.swap_ui(self.ui_main)
+        pass
+
+    # 武器を切り替える(インデックスが範囲外の場合は変化しない)
+    def swap_weapon(self, index: int):
+        if len(self.weapons) <= index:
+            return
+        self.weapon = self.weapons[index]
         pass
 
 
@@ -1616,7 +1624,6 @@ class Map:
         self.player.location = Vector2.get_vector(self.center_)
         pass
 
-
     # マップの原点を取得します
     def get_maporigin(self):
         map_origin = Vector2.get_vector(self.map_[0].location)
@@ -1637,7 +1644,6 @@ class Map:
         pos = Vector2(0, 0)
         pos.x = random.uniform(0, self.width_)
         pos.y = random.uniform(0, self.height_)
-        #print(pos)
         return pos
 
 
