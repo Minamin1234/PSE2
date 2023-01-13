@@ -1,6 +1,7 @@
 Rank PlayerName Score      Kills      Hits       PlayerHP  
-1    m          201        0          0          0         
-2    hi         182        0          0          0         
-3    minamin    151        0          0          0         
-4    foo        66         0          0          0         
-5    a          0          0          0          0         
+1    min        220        1          43         0         
+2    m          201        0          0          0         
+3    hi         182        0          0          0         
+4    minamin    151        0          0          0         
+5    foo        66         0          0          0         
+6    a          0          0          0          0         

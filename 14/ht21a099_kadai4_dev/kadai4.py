@@ -1512,6 +1512,7 @@ class Player(Character):
 
     def apply_damage(self, bullet: Bullet):
         self.hp_ -= Util.random_defenceddamage(bullet.damage, self.Def_multiply)
+        self.hits_ += 1
         if self.hp_ <= 0:
             self.destroy()
             gm: Game = self.world.owner
@@ -1526,6 +1527,7 @@ class Player(Character):
         if Util.random_bool(self.score_bonus_percent):  # ボーナスを一定の確率で適用する
             score = int(score * multply)
         self.score_ += score
+        self.kills_ += 1
         print(self.score_)
         pass
 
