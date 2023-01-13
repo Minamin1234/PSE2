@@ -820,26 +820,33 @@ class PlayerUI(UI):
 
 # 終了時のスコア/順位表示UI
 class ResultUI(UI):
-    t_ended: UIText = None
-    t_score: UIText = None
-    t_rank: UIText = None
-    pos: Vector2 = Vector2(0, 0)
+    t_ended: UIText = None  # 終了テキストオブジェクト
+    t_score: UIText = None  # スコアテキストオブジェクト
+    t_rank: UIText = None  # 順位テキストオブジェクト
+    pos: Vector2 = Vector2(0, 0)  # 表示位置(画面比率)
+    endedtext_finishedcolor: ColorRGB = ColorRGB(76, 227, 0)  # 成功時の終了テキストカラー
+    endedtext_gameovercolor: ColorRGB = ColorRGB(200, 20, 0)  # ゲームオーバー時の終了テキストカラー
+    endedtext_finishedtext: str = "Finish!"  # 成功時の終了テキスト内容
+    endedtext_gameovertext: str = "GameOver!"  # ゲームオーバー字の終了テキスト内容
 
-    def __init__(self, owner):
+    def __init__(self, owner, asfinish=False):
         super().__init__(owner)
         self.pos = Vector2(0.375, 0.5)
         self.t_ended = UIText(self)
         self.t_ended.pos = self.pos
         self.t_ended.use_percentpos = True
         self.t_ended.fontsize = 64
-        self.t_ended.fontcolor = ColorRGB(200, 20, 0)
-        self.t_ended.content = "GameOver!!"
+        if asfinish:
+            self.t_ended.fontcolor = self.endedtext_finishedcolor
+            self.t_ended.content = self.endedtext_finishedtext
+        else:
+            self.t_ended.fontcolor = self.endedtext_gameovercolor
+            self.t_ended.content = self.endedtext_gameovertext
         self.addto_viewport(self.t_ended)
 
         me: Player = self.owner
 
         self.t_score = UIText(self)
-        #self.t_score.pos = Vector2(0.475, 0.65)
         self.t_score.pos = Vector2(0, 0)
         self.t_score.pos.x = self.pos.x + 0.08
         self.t_score.pos.y = self.pos.y + 0.15
@@ -852,7 +859,6 @@ class ResultUI(UI):
         rank = gm.get_playerrank()
 
         self.t_rank = UIText(self)
-        #self.t_rank.pos = Vector2(0.475, 0.75)
         self.t_rank.pos = Vector2(0, 0)
         self.t_rank.pos.x = self.t_score.pos.x
         self.t_rank.pos.y = self.t_score.pos.y + 0.1
@@ -1743,6 +1749,8 @@ class Enemy(Character):
         if self.hp_ <= 0:
             self.destroy()
             bullet.owner.apply_score(self.HP)
+            gm: Game = self.world.owner
+            gm.on_destroyed_enemy(self)
 
         print(f"Bullet: {bullet.damage}, Damage: {dmg}, Enemy_HP: {self.hp_}")
 
@@ -1907,8 +1915,10 @@ class Map:
 # ゲームを実行/管理するクラス
 class Game:
     totalizer: Totalizer = None  # スコア集計オブジェクト
+    enemies: list = []
 
     def __init__(self):
+        self.enemies = []
         self.mapsize = Vector2(0, 0)
         self.groundmap= []
         self.groundstylemap = []
@@ -2026,6 +2036,8 @@ class Game:
         self.enemy.spawn(self.world)
         self.enemy2.spawn(self.world)
         self.player.spawn(self.world)
+        self.enemies.append(self.enemy)
+        self.enemies.append(self.enemy2)
         self.map.set_tocenter(Vector2(10, 800))
         self.isloading = False
         self.player.swap_ui(PlayerNameUI(self.player))
@@ -2066,14 +2078,22 @@ class Game:
     def get_playerrank(self):
         return self.totalizer.get_rank(self.player.playername)
 
-    def on_ended_game(self):
+    def on_ended_game(self, asfinish=False):
         data_ = self.player.get_scoredata()
         datas_ = self.totalizer
         datas_.input("scores.txt")
         datas_.add_scoredata(data_)
         datas_.output_scores("scores.txt")
-        self.player.swap_ui(ResultUI(self.player))
+        self.player.swap_ui(ResultUI(self.player, asfinish))
         self.world.set_pause(True)
+        pass
+
+    # 敵が撃破された際に呼ばれる
+    def on_destroyed_enemy(self, enemy: Enemy):
+        if enemy in self.enemies:
+            self.enemies.remove(enemy)
+        if len(self.enemies) <= 0:
+            self.on_ended_game(asfinish=True)
         pass
 
 
