@@ -297,6 +297,20 @@ class Totalizer:
         pass
         print("--Done--")
 
+    # 指定したプレイヤー名の順位を返す。存在しない場合等は0を返す
+    def get_rank(self, playername: str):
+        if not self.loaded:
+            return 0
+        rank = 1
+        for data in sorted(self.scores_.values(), reverse=True, key=lambda ds: ds.score):
+            d: ScoreData = data
+            if d.playername == playername:
+                return rank
+            rank += 1
+            pass
+        return 0
+        pass
+
     # 本プログラムと同一ディレクトリにあるファイル名と結合してフルパスを返す
     def joint_currentdirectoryfile(self, filename: str):
         result_ = os.path.join(os.path.dirname(os.getcwd()), filename)
@@ -476,6 +490,7 @@ class UIElement:
 class UIText(UIElement):
     content: str = ""
     fontsize: int = 32
+    fontcolor: ColorRGB = ColorRGB(255, 255, 255)
 
     def __init__(self, owner: UI):
         super().__init__(owner)
@@ -484,7 +499,10 @@ class UIText(UIElement):
 
     def draw(self):
         super().draw()
-        screen.draw.text(self.content, Vector2.get_tuple(self.pos_), fontsize=self.fontsize)
+        screen.draw.text(self.content,
+                         Vector2.get_tuple(self.pos_),
+                         fontsize=self.fontsize,
+                         color=self.fontcolor.get_tuple())
         pass
 
 
@@ -798,6 +816,58 @@ class PlayerUI(UI):
             self.pausetext.draw()
 
         pass
+
+
+# 終了時のスコア/順位表示UI
+class ResultUI(UI):
+    t_ended: UIText = None
+    t_score: UIText = None
+    t_rank: UIText = None
+    pos: Vector2 = Vector2(0, 0)
+
+    def __init__(self, owner):
+        super().__init__(owner)
+        self.pos = Vector2(0.375, 0.5)
+        self.t_ended = UIText(self)
+        self.t_ended.pos = self.pos
+        self.t_ended.use_percentpos = True
+        self.t_ended.fontsize = 64
+        self.t_ended.fontcolor = ColorRGB(200, 20, 0)
+        self.t_ended.content = "GameOver!!"
+        self.addto_viewport(self.t_ended)
+
+        me: Player = self.owner
+
+        self.t_score = UIText(self)
+        #self.t_score.pos = Vector2(0.475, 0.65)
+        self.t_score.pos = Vector2(0, 0)
+        self.t_score.pos.x = self.pos.x + 0.08
+        self.t_score.pos.y = self.pos.y + 0.15
+        self.t_score.use_percentpos = True
+        self.t_score.fontsize = 32
+        self.t_score.content = f"Score: {str(me.score_)}"
+        self.addto_viewport(self.t_score)
+
+        gm: Game = me.world.owner
+        rank = gm.get_playerrank()
+
+        self.t_rank = UIText(self)
+        #self.t_rank.pos = Vector2(0.475, 0.75)
+        self.t_rank.pos = Vector2(0, 0)
+        self.t_rank.pos.x = self.t_score.pos.x
+        self.t_rank.pos.y = self.t_score.pos.y + 0.1
+        self.t_rank.use_percentpos = True
+        self.t_rank.fontsize = 32
+        self.t_rank.content = f"Rank: {rank}"
+        self.addto_viewport(self.t_rank)
+
+        pass
+
+    def draw(self):
+        super().draw()
+        self.t_ended.draw()
+        self.t_score.draw()
+        self.t_rank.draw()
 
 
 # ゲーム内で配置/移動可能なオブジェクトクラス
@@ -1514,7 +1584,7 @@ class Player(Character):
         self.hp_ -= Util.random_defenceddamage(bullet.damage, self.Def_multiply)
         self.hits_ += 1
         if self.hp_ <= 0:
-            self.destroy()
+            #self.visible = False
             gm: Game = self.world.owner
             gm.on_ended_game()
 
@@ -1836,6 +1906,8 @@ class Map:
 
 # ゲームを実行/管理するクラス
 class Game:
+    totalizer: Totalizer = None  # スコア集計オブジェクト
+
     def __init__(self):
         self.mapsize = Vector2(0, 0)
         self.groundmap= []
@@ -1850,6 +1922,7 @@ class Game:
         self.enemy: Enemy = None
         self.enemy2: Enemy = None
         self.isloading: bool = False
+        self.totalizer = Totalizer()
         pass
 
     def initialize(self):
@@ -1990,13 +2063,17 @@ class Game:
             self.world.on_key_up(key)
         pass
 
+    def get_playerrank(self):
+        return self.totalizer.get_rank(self.player.playername)
+
     def on_ended_game(self):
-        self.world.set_pause(True)
         data_ = self.player.get_scoredata()
-        datas_ = Totalizer()
+        datas_ = self.totalizer
         datas_.input("scores.txt")
         datas_.add_scoredata(data_)
         datas_.output_scores("scores.txt")
+        self.player.swap_ui(ResultUI(self.player))
+        self.world.set_pause(True)
         pass
 
 
