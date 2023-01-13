@@ -1,0 +1,2 @@
+Rank PlayerName Score Kills Hits PlayerHP
+1 minamin 191 0 0 -1.868893320899983

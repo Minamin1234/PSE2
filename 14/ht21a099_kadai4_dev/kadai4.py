@@ -1,5 +1,6 @@
 # HT21A099 南　李玖
 import math
+import os.path
 import random
 
 import pygame.mouse
@@ -185,19 +186,78 @@ class ScoreData:
 
 # スコア集計クラス
 class Totalizer:
-    scores_: dict = None
+    scores_: dict = dict()
+    loaded: bool = False
 
     def __init__(self):
+        self.initialize()
         pass
 
-    def input(self, file: str):
+    def initialize(self):
+        self.scores_ = dict()
+        self.loaded = False
+
+    # スコアテキストファイルから読み込みを行う
+    def input(self, filename: str):
+        if self.loaded:
+            return
+        path_ = self.joint_currentdirectoryfile(filename)
+        data_ = ""
+        try:
+            with open(path_, "r") as f:
+                data_ = f.readlines()
+                pass
+            pass
+        except OSError as e:
+            print("ScoreTextFile is not found.")
+            return
+            pass
+
+        for i, d in enumerate(data_):
+            if i == 0 or len(d) < 6:
+                continue
+                pass
+            datas_ = d.split()
+            newdata_ = ScoreData()
+            newdata_.playername = datas_[1]
+            newdata_.score = datas_[2]
+            newdata_.kills = datas_[3]
+            newdata_.hits = datas_[4]
+            newdata_.playerhp = datas_[5]
+            self.scores_[datas_[1]] = newdata_
+            pass
+        self.loaded = True
         pass
 
+    # スコアデータを追加する
     def add_scoredata(self, newdata: ScoreData):
+        if newdata in self.scores_:
+            data: ScoreData = self.scores_[newdata.playername]
+            if newdata.score > data.score:
+                self.scores_[newdata.playername] = newdata
+                pass
+            pass
+        else:
+            self.scores_[newdata.playername] = newdata
+            pass
         pass
 
-    def output_scores(self, file: str):
+    # 読み込んだスコアデータ群をテキストファイルに書き出す
+    def output_scores(self, filename: str):
+        path = self.joint_currentdirectoryfile(filename)
+        with open(path, "w") as f:
+            f.write("Rank PlayerName Score Kills Hits PlayerHP\n")
+            for i, data in enumerate(sorted(self.scores_.values(), reverse=True, key=lambda d: d.score)):
+                f.write(f"{i+1} {data.playername} {data.score} {data.kills} {data.hits} {data.playerhp}\n")
+                pass
+            pass
         pass
+        print("--Done--")
+
+    # 本プログラムと同一ディレクトリにあるファイル名と結合してフルパスを返す
+    def joint_currentdirectoryfile(self, filename: str):
+        result_ = os.path.join(os.path.dirname(os.getcwd()), filename)
+        return result_
 
 
 # ゲーム内全てのオブジェクトを管理するためのクラス
@@ -268,12 +328,6 @@ class World:
     # 現在、オブジェクトの更新処理が一時停止しているかどうかを返す
     def get_pause(self):
         return self.ispause_
-
-    # ゲームを初期化する
-    def gameinitalize(self):
-        gm: Game = self.owner
-        gm.initialize()
-        return
 
 
 # UIの定義したクラス
@@ -1294,11 +1348,13 @@ class Character(Pawn):
 
 # プレイヤー
 class Player(Character):
-    playername: str = ""
+    playername: str = ""  # プレイヤー名
     mousepressed_: bool = False  # 現在、マウスのボタンが押された状態かどうか
     score_max_multiply: int = 5  # スコア加点時の最大乗数
     score_bonus_percent: float = 0.2  # ボーナス加点される確率
     score_: int = 0  # 現在のスコア
+    kills_: int = 0  # 現在のキル数(撃破した敵の数)
+    hits_: int = 0  # 現在のヒット数(打たれた回数)
     ui_main: UI = None  # ゲーム中のUI
     ui_pause: UI = None  # 一時停止中のUI
     weapons: list = []
@@ -1415,6 +1471,8 @@ class Player(Character):
         self.hp_ -= Util.random_defenceddamage(bullet.damage, self.Def_multiply)
         if self.hp_ <= 0:
             self.destroy()
+            gm: Game = self.world.owner
+            gm.on_ended_game()
 
         pass
 
@@ -1427,6 +1485,16 @@ class Player(Character):
         self.score_ += score
         print(self.score_)
         pass
+
+    # プレイヤーのスコアデータを返します
+    def get_scoredata(self):
+        data_ = ScoreData()
+        data_.playername = self.playername
+        data_.score = self.score_
+        data_.kills = self.kills_
+        data_.hits = self.hits_
+        data_.playerhp = (self.hp_ / self.HP) * 100
+        return data_
 
     # メニューの表示/非表示を切り替える
     def show_menu(self):
@@ -1875,6 +1943,15 @@ class Game:
     def on_key_up(self, key):
         if not self.isloading:
             self.world.on_key_up(key)
+        pass
+
+    def on_ended_game(self):
+        self.world.set_pause(True)
+        data_ = self.player.get_scoredata()
+        datas_ = Totalizer()
+        datas_.input("scores.txt")
+        datas_.add_scoredata(data_)
+        datas_.output_scores("scores.txt")
         pass
 
 
