@@ -1,6 +1,6 @@
 Rank PlayerName Score      Kills      Hits       PlayerHP  
-1    awadas     1212       1          42         0         
-2    minamin    1054       2          18         62        
+1    minamin    1387       2          25         36        
+2    awadas     1212       1          42         0         
 3    mwmw       508        1          40         0         
 4    aaaaa      447        2          10         81        
 5    aaa        371        2          8          78        

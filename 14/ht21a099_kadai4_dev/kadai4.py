@@ -882,6 +882,8 @@ class Pawn(Actor):
     RIGHT = 1  # 右
     UP = 2  # 上
     DOWN = 3  # 下
+    SkinPic: str = ""  # 外見の画像
+    Skins = None  # スキンセット
     visible: bool = True  # 表示/非表示を設定します
     world: World = None  # 自身が配置されているワールド
     location: Vector2 = Vector2(0, 0)  # 位置
@@ -893,6 +895,7 @@ class Pawn(Actor):
 
     def __init__(self, pic_name):
         super().__init__(pic_name)
+        self.SkinPic = pic_name
         self.location = Vector2(self.x, self.y)
         self.moveInput = Vector2(0, 0)
 
@@ -908,6 +911,7 @@ class Pawn(Actor):
 
     # 更新処理
     def update(self, dt):
+        self.image = self.SkinPic
         self.moveInput.x, self.moveInput.y = 0, 0
         # self.location.x, self.location.y = self.x, self.y
         self.x, self.y = self.location.x, self.location.y
@@ -1081,6 +1085,49 @@ class SMGShell(Bullet):
         self.hit_once = True
 
 
+# キャラクタースキン
+class CharacterSkins:
+    def __init__(self):
+        self.handgun: str = ""  # 拳銃を所持しているスキン
+        self.shotgun: str = ""  # ショットガンを所持しているスキン
+        self.smg: str = ""  # サブマシンガンを所持しているスキン
+        self.reloding: str = ""  # 装填しているスキン
+        pass
+
+    # characterが所有している武器の種類に応じてスキンを変更する
+    def set_skin(self, owner):
+        chara: Character = owner
+        if type(chara.weapon) is HandGun:
+            chara.SkinPic = self.handgun
+        elif type(chara.weapon) is Shotgun:
+            chara.SkinPic = self.shotgun
+        elif type(chara.weapon) is SMG:
+            chara.SkinPic = self.smg
+        pass
+
+
+# プレイヤーのスキン
+class PlayerSkins(CharacterSkins):
+    def __init__(self):
+        super().__init__()
+        self.handgun = "manblue_gun"
+        self.shotgun = "manblue_silencer"
+        self.smg = "manblue_machine"
+        self.reloding = "manblue_reload"
+        pass
+
+
+# 敵のスキン
+class EnemySkins(CharacterSkins):
+    def __init__(self):
+        super().__init__()
+        self.handgun = "manbrown_gun"
+        self.shotgun = "manbrown_silencer"
+        self.smg = "manbrown_machine"
+        self.reloding = "manbrown_reload"
+        pass
+
+
 # 武器クラス
 class Weapon:
     owner: Pawn = None  # 所有者
@@ -1149,13 +1196,25 @@ class Weapon:
         if not self.is_reloading_:  # 装填中でなければ
             self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
             sounds.handgun_reload.play()  # 装填音を鳴らす
+            self.set_reloadingskin()
             clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
+        pass
+
+    # 装填時のスキンを設定する
+    def set_reloadingskin(self, ended=False):
+        skins: CharacterSkins = self.owner.Skins
+        if ended:
+            skins.set_skin(self.owner)
+        else:
+            self.owner.SkinPic = skins.reloding
+            pass
         pass
 
     # 装填が完了した際に呼ばれる
     def on_ended_reload(self):
         print("Reloaded")
         sounds.handgun_slide.play()  # 銃スライド音を鳴らす
+        self.set_reloadingskin(True)
         self.capacity_ = self.capacity  # 現在の装填数を補充する
         self.is_reloading_ = False  # 装填中であるかどうかを設定する
 
@@ -1228,11 +1287,13 @@ class SMG(Weapon):
         if not self.is_reloading_:  # 装填中でなければ
             self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
             sounds.smg_reload.play()  # 装填音を鳴らす
+            self.set_reloadingskin()
             clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
         pass
 
     def on_ended_reload(self):
         sounds.smg_attach.play()  # 銃スライド音を鳴らす
+        self.set_reloadingskin(True)
         self.capacity_ = self.capacity  # 現在の装填数を補充する
         self.is_reloading_ = False  # 装填中であるかどうかを設定する
 
@@ -1294,11 +1355,13 @@ class Shotgun(Weapon):
         if not self.is_reloading_:
             self.is_reloading_ = True
             sounds.shotgun_reload.play()
+            self.set_reloadingskin()
             clock.schedule_unique(self.on_ended_reload, self.reload_time)
             pass
 
     def on_ended_reload(self):
         sounds.shotgun_pump.play()
+        self.set_reloadingskin(True)
         self.capacity_ = self.capacity
         self.is_reloading_ = False
 
@@ -1392,7 +1455,6 @@ CDR = 12  # Corner_downright
 
 # プレイヤー/敵共通のキャラクタークラス
 class Character(Pawn):
-    SkinPic: str = ""  # 外見の画像
     HP = 100  # 最大ヒットポイント
     Def_multiply: float = 0.0  # 防御乗数(ダメージの軽減率)
     CharacterMoveSpeed = 5  # キャラクターの移動速度
@@ -1479,13 +1541,15 @@ class Player(Character):
     weapons: list = []
 
     def __init__(self):
-        self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
+        self.Skins = PlayerSkins()
+        self.weapon = HandGun(self)
+        self.Skins.set_skin(self)
+        # self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
         super().__init__(self.SkinPic)
         self.HP = 500
         self.CharacterMoveSpeed = 5
         self.isBlock = True
         self.isKeyInput = True
-        self.weapon = HandGun(self)
         self.weapons = [
             self.weapon,
             Shotgun(self),
@@ -1497,6 +1561,7 @@ class Player(Character):
         self.ui_main = PlayerUI(self)
         self.ui_pause = MenuUI(self)
         self.ui = self.ui_main
+        print(self.SkinPic)
 
     def update(self, dt):
         super().update(dt)
@@ -1578,6 +1643,7 @@ class Player(Character):
                 i = int(c) - 1
                 if 0 <= i <= 9:
                     self.swap_weapon(i)
+                    self.Skins.set_skin(self)
                     pass
 
         pass
@@ -1646,12 +1712,13 @@ class Enemy(Character):
     moveto_: Vector2 = Vector2(0, 0)
 
     def __init__(self):
-        self.SkinPic = "manbrown_gun"
+        self.Skins = EnemySkins()
+        self.weapon = HandGun(self)
+        self.Skins.set_skin(self)
         super().__init__(self.SkinPic)
         self.HP = 50
         self.Def_multiply = 0.5
         self.CharacterMoveSpeed = 5
-        self.weapon = HandGun(self)
         self.isBlock = False
         self.isKeyInput = False
         self.target_ = None
@@ -1662,6 +1729,8 @@ class Enemy(Character):
         self.target_ = None
         self.targets_ = []
         self.direction_ = Vector2(0, 0)
+
+        print(self.SkinPic)
 
     # ワールド内のオブジェクトを探索し、自身から指定した半径内に含まれるプレイヤーを探します。
     def find(self):
