@@ -174,13 +174,32 @@ class Vector2:
 
 # スコアデータクラス
 class ScoreData:
-    playername: str = ""
-    score: int = 0
-    kills: int = 0
-    playerhp = 0
-    hits: int = 0
+    playername: str = ""  # プレイヤー名
+    score: int = 0  # スコア
+    kills: int = 0  # 敵の撃破数
+    playerhp = 0  # ゲーム終了時のHP
+    hits: int = 0  # 被弾数
+    mxcounts_: int = 0  # (テキスト用)このデータでの最大桁/文字数
 
     def __init__(self):
+        self.playername = ""
+        self.score = 0
+        self.kills = 0
+        self.playerhp = 0
+        self.hits = 0
+        self.mxcounts_ = 0
+        pass
+
+    # データの整形を行い最大文字数を格納します。
+    def fit(self):
+        self.mxcounts_ = max(self.mxcounts_, len(self.playername))
+        self.mxcounts_ = max(self.mxcounts_, len(str(self.score)))
+        self.mxcounts_ = max(self.mxcounts_, len(str(self.kills)))
+        if self.playerhp < 0:
+            self.playerhp = 0
+            pass
+        self.mxcounts_ = max(self.mxcounts_, len(str(self.playerhp)))
+        self.mxcounts_ = max(self.mxcounts_, len(str(self.hits)))
         pass
 
 
@@ -220,10 +239,10 @@ class Totalizer:
             datas_ = d.split()
             newdata_ = ScoreData()
             newdata_.playername = datas_[1]
-            newdata_.score = datas_[2]
-            newdata_.kills = datas_[3]
-            newdata_.hits = datas_[4]
-            newdata_.playerhp = datas_[5]
+            newdata_.score = int(datas_[2])
+            newdata_.kills = int(datas_[3])
+            newdata_.hits = int(datas_[4])
+            newdata_.playerhp = int(datas_[5])
             self.scores_[datas_[1]] = newdata_
             pass
         self.loaded = True
@@ -245,10 +264,34 @@ class Totalizer:
     # 読み込んだスコアデータ群をテキストファイルに書き出す
     def output_scores(self, filename: str):
         path = self.joint_currentdirectoryfile(filename)
+        mxcnt = 10
+        for data in self.scores_.values():
+            d: ScoreData = data
+            d.fit()
+            mxcnt = max(mxcnt, d.mxcounts_)
+            pass
         with open(path, "w") as f:
-            f.write("Rank PlayerName Score Kills Hits PlayerHP\n")
-            for i, data in enumerate(sorted(self.scores_.values(), reverse=True, key=lambda d: d.score)):
-                f.write(f"{i+1} {data.playername} {data.score} {data.kills} {data.hits} {data.playerhp}\n")
+            rk = "Rank"
+            pn = "PlayerName"
+            sc = "Score"
+            ks = "Kills"
+            hs = "Hits"
+            ph = "PlayerHP"
+            ranklen = max(len(str(len(self.scores_))), len(rk))
+            f.write(f"{rk:{ranklen}} ")
+            f.write(f"{pn:{mxcnt}} ")
+            f.write(f"{sc:{mxcnt}} ")
+            f.write(f"{ks:{mxcnt}} ")
+            f.write(f"{hs:{mxcnt}} ")
+            f.write(f"{ph:{mxcnt}}\n")
+            for i, data in enumerate(sorted(self.scores_.values(), reverse=True, key=lambda sd: sd.score)):
+                d: ScoreData = data
+                f.write(f"{str(i + 1):{ranklen}} ")
+                f.write(f"{d.playername:{mxcnt}} ")
+                f.write(f"{str(d.score):{mxcnt}} ")
+                f.write(f"{str(d.kills):{mxcnt}} ")
+                f.write(f"{str(d.hits):{mxcnt}} ")
+                f.write(f"{str(d.playerhp):{mxcnt}}\n")
                 pass
             pass
         pass
@@ -1490,10 +1533,10 @@ class Player(Character):
     def get_scoredata(self):
         data_ = ScoreData()
         data_.playername = self.playername
-        data_.score = self.score_
-        data_.kills = self.kills_
-        data_.hits = self.hits_
-        data_.playerhp = (self.hp_ / self.HP) * 100
+        data_.score = int(self.score_)
+        data_.kills = int(self.kills_)
+        data_.hits = int(self.hits_)
+        data_.playerhp = int((self.hp_ / self.HP) * 100)
         return data_
 
     # メニューの表示/非表示を切り替える
