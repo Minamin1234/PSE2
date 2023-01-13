@@ -7,9 +7,9 @@ Rank PlayerName Score      Kills      Hits       PlayerHP
 6    sasaw      183        1          49         0         
 7    hi         182        0          0          0         
 8    b          173        1          44         0         
-9    minamin    151        0          0          0         
-10   awda       148        1          38         0         
-11   hoo        145        1          42         0         
+9    awda       148        1          38         0         
+10   hoo        145        1          42         0         
+11   minamin    145        1          40         0         
 12   hello      128        1          39         0         
 13   hhh        122        1          47         0         
 14   aawa       101        1          48         0         

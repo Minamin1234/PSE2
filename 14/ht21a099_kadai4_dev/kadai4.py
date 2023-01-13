@@ -250,7 +250,7 @@ class Totalizer:
 
     # スコアデータを追加する
     def add_scoredata(self, newdata: ScoreData):
-        if newdata in self.scores_:
+        if newdata.playername in self.scores_:
             data: ScoreData = self.scores_[newdata.playername]
             if newdata.score > data.score:
                 self.scores_[newdata.playername] = newdata
