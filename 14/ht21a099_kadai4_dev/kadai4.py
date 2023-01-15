@@ -1731,6 +1731,7 @@ class Enemy(Character):
     def __init__(self):
         self.Skins = EnemySkins()
         self.weapon = HandGun(self)
+        self.weapon.fire_rate = 0.75
         self.Skins.set_skin(self)
         super().__init__(self.SkinPic)
         self.HP = 50
