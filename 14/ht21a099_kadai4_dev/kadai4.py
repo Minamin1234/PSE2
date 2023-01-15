@@ -1131,10 +1131,11 @@ class EnemySkins(CharacterSkins):
 # 武器クラス
 class Weapon:
     owner: Pawn = None  # 所有者
-    bullet: Bullet = None  # 発射する弾
+    bullet = None  # 発射する弾クラス
     sound_fire: pygame.mixer.Sound = None  # 発砲音
     sound_reload: pygame.mixer.Sound = None  # 装填音
     sound_empty: pygame.mixer.Sound = None  # 空撃ち音
+    sound_slide: pygame.mixer.Sound = None  # 装填完了時のスライド音
     damage = 15  # 基本ダメージ
     damage_multiply = 0.5  # ダメージ乗数
     capacity: int = 10  # 装弾数
@@ -1156,9 +1157,11 @@ class Weapon:
         self.owner = owner
         self.capacity_ = self.capacity
         self.is_ready = True
+        self.bullet = Bullet
         self.sound_fire = sounds.handgun_shot
         self.sound_empty = sounds.handgun_empty
         self.sound_reload = sounds.handgun_reload
+        self.sound_slide = sounds.handgun_slide
         pass
 
     # 弾を発射する
@@ -1166,7 +1169,7 @@ class Weapon:
         if not self.is_reloading_:  # 装填中でなければ
             if self.capacity_ > 0:  # 弾が残っていれば
                 if self.is_ready:  # 武器が発射可能であれば
-                    blt = Bullet(self.owner)  # 弾オブジェクトの生成
+                    blt = self.bullet(self.owner)  # 弾オブジェクトの生成
                     blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
                     blt.spawn(self.owner.world)  # 弾をワールドに生成する
                     blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
@@ -1224,7 +1227,8 @@ class Weapon:
     # 装填が完了した際に呼ばれる
     def on_ended_reload(self):
         print("Reloaded")
-        sounds.handgun_slide.play()  # 銃スライド音を鳴らす
+        #sounds.handgun_slide.play()  # 銃スライド音を鳴らす
+        self.sound_slide.play()  # 銃スライド音を鳴らす
         self.set_reloadingskin(True)
         self.capacity_ = self.capacity  # 現在の装填数を補充する
         self.is_reloading_ = False  # 装填中であるかどうかを設定する
@@ -1258,7 +1262,6 @@ class HandGun(Weapon):
 
 # サブマシンガン(連射が可能な銃)
 class SMG(Weapon):
-
     def __init__(self, owner: Pawn):
         super().__init__(owner)
         self.capacity = 30
@@ -1268,48 +1271,12 @@ class SMG(Weapon):
         self.diffusion = 0.5
         self.max_diffangle = 20
         self.fire_mode = self.FIRE_MODE_AUTO
+        self.bullet = SMGShell
         self.sound_fire = sounds.smg_shot
         self.sound_empty = sounds.smg_empty
         self.sound_reload = sounds.smg_reload
+        self.sound_slide = sounds.smg_attach
         pass
-
-    def fire(self, at: Vector2):
-        if not self.is_reloading_:  # 装填中でなければ
-            if self.capacity_ > 0:  # 弾が残っていれば
-                if self.is_ready:  # 武器が発射可能であれば
-                    blt = SMGShell(self.owner)  # 弾オブジェクトの生成
-                    blt.damage = Util.random_damage(self.damage, self.damage_multiply)  # 弾の持つダメージをランダムに算定し設定する
-                    blt.spawn(self.owner.world)  # 弾をワールドに生成する
-                    blt.location = Vector2.get_vector(self.owner.location)  # 弾の位置を設定
-                    direction = Vector2.get_angle2(self.owner.location, at)  # 弾の角度(発砲者とマウスカーソル位置のなす角度)
-                    direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
-                    if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
-                        direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
-                    blt.set_direction(direction)  # 飛翔方向を設定
-                    blt.location += direction * 10
-                    self.capacity_ -= 1  # 現在の装弾数を減らす
-                    sounds.smg_shot.play()  # 発砲音を鳴らす
-                    self.is_ready = False
-                    clock.schedule_unique(self.on_after_fire, self.fire_rate)
-                pass
-            else:  # 弾が残っていない時
-                sounds.smg_empty.play()  # 空撃ち音を鳴らす
-            pass
-        pass
-
-    def reload(self):
-        if not self.is_reloading_:  # 装填中でなければ
-            self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
-            sounds.smg_reload.play()  # 装填音を鳴らす
-            self.set_reloadingskin()
-            clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
-        pass
-
-    def on_ended_reload(self):
-        sounds.smg_attach.play()  # 銃スライド音を鳴らす
-        self.set_reloadingskin(True)
-        self.capacity_ = self.capacity  # 現在の装填数を補充する
-        self.is_reloading_ = False  # 装填中であるかどうかを設定する
 
 
 # ショットガン(一度の射撃で複数弾が扇状に拡散する銃)
@@ -1327,6 +1294,10 @@ class Shotgun(Weapon):
         self.max_diffangle = 5.0
         self.fire_mode = self.FIRE_MODE_SHOT
         self.shotdiffangle = 15
+        self.sound_fire = sounds.shotgun_shot
+        self.sound_empty = sounds.shotgun_empty
+        self.sound_reload = sounds.shotgun_reload
+        self.sound_slide = sounds.shotgun_pump
         pass
 
     def fire(self, at: Vector2):
@@ -1336,7 +1307,7 @@ class Shotgun(Weapon):
                 shotangle_ = -shotangle  # 負の角度から扇状に拡散させる
                 if self.is_ready:
                     for i in range(self.shells):  # 弾の数だけ繰り返す
-                        blt = ShotShell(self.owner)
+                        blt = self.bullet(self.owner)
                         blt.damage = Util.random_damage(self.damage, self.damage_multiply)
                         blt.spawn(self.owner.world)
                         blt.location = Vector2.get_vector(self.owner.location)
@@ -1364,20 +1335,6 @@ class Shotgun(Weapon):
         super().on_after_fire()
         sounds.shotgun_pump.play()
         pass
-
-    def reload(self):
-        if not self.is_reloading_:
-            self.is_reloading_ = True
-            sounds.shotgun_reload.play()
-            self.set_reloadingskin()
-            clock.schedule_unique(self.on_ended_reload, self.reload_time)
-            pass
-
-    def on_ended_reload(self):
-        sounds.shotgun_pump.play()
-        self.set_reloadingskin(True)
-        self.capacity_ = self.capacity
-        self.is_reloading_ = False
 
 
 # ゲーム内に配置可能な静的オブジェクト
