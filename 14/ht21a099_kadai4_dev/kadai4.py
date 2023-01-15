@@ -1751,31 +1751,13 @@ class Enemy(Character):
 
     # ワールド内のオブジェクトを探索し、自身から指定した半径内に含まれるプレイヤーを探します。
     def find(self):
-        # ワールド内のオブジェクトを探索し、自分の半径内に含まれるプレイヤーを抜き出す
-        for p in self.world.Pawns:
-            if type(p) is Player:
-                distance = Vector2.get_distance(self.location, p.location)
-                if distance <= self.FindDistance:
-                    self.targets_.append(p)
-                else:
-                    if p in self.targets_:
-                        self.targets_.remove(p)
-        if self.targets_ == []:
+        gm: Game = self.world.owner
+        plyer: Player = gm.player
+        dist = Vector2.get_distance(self.location, plyer.location)
+        if dist <= self.FindDistance:
+            self.target_ = plyer
+        else:
             self.target_ = None
-            return
-        # 作成したターゲットリストについて、それぞれの距離を求めてリストにする
-        dists: list[float] = []
-        for p in self.targets_:
-            dist = Vector2.get_distance(self.location, p.location)
-            dists.append(dist)
-        # 距離のリストから最短のものを求めて最も近くにあるオブジェクトを抜き出す
-        mn = dists[0]
-        mnidx = 0
-        for i, dist in enumerate(dists):
-            if mn >= dist:
-                mn = dist
-                mnidx = i
-        self.target_ = self.targets_[mnidx]
         pass
 
     # 攻撃対象が存在する場合はその方向を向く。
@@ -1785,27 +1767,6 @@ class Enemy(Character):
         if self.target_ != None:
             rot = Vector2.get_angle2(self.location, self.target_.location)
             self.angle = -rot
-
-    def moveto(self):
-        if not self.ismoving_:
-            self.ismoving_ = True
-            self.moveto_ = self.world.Map.get_randomlocation_in_map()
-            direction = Vector2.get_direction(self.world.Map.get_worldlocation(self.location), self.moveto_)
-            self.direction_ = Vector2.get_vector(direction)
-            clock.schedule_unique(self.on_ended_move, self.RefreshRate)
-            print(f"RandomPos: {self.moveto_}")
-            pass
-        else:
-            dir = Vector2.get_direction(self.world.Map.get_worldlocation(self.location), self.moveto_)
-            self.moveInput = Vector2.get_vector(dir)
-            pass
-        print("move")
-        pass
-
-    def on_ended_move(self):
-        self.ismoving_ = False
-        self.direction_ = Vector2(0, 0)
-        pass
 
     # 所持している武器を発砲します
     def fire(self):
