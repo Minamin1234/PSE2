@@ -757,11 +757,11 @@ class PlayerUI(UI):
         self.hpbar.percent = 1.0
         self.hpbar.backgroundcolor = ColorRGB(150, 150, 150)  # HPが満たされていない状態のカラー(背景のカラー)
         self.hpbar.filledcolor = ColorRGB(0, 240, 140)  # HPが満たされた状態のカラー
-        self.hpbar.pos = Vector2(0.05, 0.9)
+        self.hpbar.pos = Vector2(0.75, 0.86)
         self.hpbar.use_percentpos = True
-        self.hpbar.size = Vector2(450, 30)
+        self.hpbar.size = Vector2(175, 10)
         self.hpbar.hp_text_pos_relative = Vector2(10, 0)
-        self.hpbar.hp_UItext_.fontsize = 52
+        self.hpbar.hp_UItext_.fontsize = 24
         self.addto_viewport(self.hpbar)
 
         # 残弾数ゲージ要素
@@ -848,8 +848,8 @@ class ResultUI(UI):
 
         self.t_score = UIText(self)
         self.t_score.pos = Vector2(0, 0)
-        self.t_score.pos.x = self.pos.x + 0.08
-        self.t_score.pos.y = self.pos.y + 0.15
+        self.t_score.pos.x = self.pos.x
+        self.t_score.pos.y = self.pos.y + 0.1
         self.t_score.use_percentpos = True
         self.t_score.fontsize = 32
         self.t_score.content = f"Score: {str(me.score_)}"
@@ -860,8 +860,8 @@ class ResultUI(UI):
 
         self.t_rank = UIText(self)
         self.t_rank.pos = Vector2(0, 0)
-        self.t_rank.pos.x = self.t_score.pos.x
-        self.t_rank.pos.y = self.t_score.pos.y + 0.1
+        self.t_rank.pos.x = self.pos.x
+        self.t_rank.pos.y = self.pos.y + 0.2
         self.t_rank.use_percentpos = True
         self.t_rank.fontsize = 32
         self.t_rank.content = f"Rank: {rank}"
@@ -1797,6 +1797,8 @@ class Enemy(Character):
         else:
             dir = Vector2.get_direction(self.world.Map.get_worldlocation(self.location), self.moveto_)
             self.moveInput = Vector2.get_vector(dir)
+            pass
+        print("move")
         pass
 
     def on_ended_move(self):
@@ -1973,8 +1975,8 @@ class Map:
                 elif obj_type == E:
                     e = self.enemy_class()
                     e.location = Vector2(0, 0)
-                    e.location.x = self.map_[0].width * x
-                    e.location.y = self.map_[0].height * y
+                    e.location.x = (self.map_[0].width * x) + self.map_[0].width * 0.5
+                    e.location.y = (self.map_[0].height * y) + self.map_[0].height * 0.5
                     enemies.append(e)
                     continue
                     pass
@@ -2071,40 +2073,40 @@ class Game:
 
     def initialize(self):
         self.isloading = True
-        self.mapsize = Vector2(15, 15)  # マップサイズ
+        self.mapsize = Vector2(30, 15)  # マップサイズ
         self.groundmap = [  # 地面オブジェクトの配置
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
-            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G],
+            [G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G]
         ]
         self.groundstylemap = [  # 地面のスタイル割り当て
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         ]
         self.groundstyles = [  # 割り当てと使用する地面画像一覧
             "tile_01",
@@ -2112,41 +2114,42 @@ class Game:
             "tile_42"
         ]
         self.wallmap = [  # 壁障害物の配置
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , E   , N   , N   , N   , E   ],
-            [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , L   , R   , L   , R   , N   , N   , N   , N   , E   , L   , LR  , LR  , JUR , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , JUL , LR  , LR  , LR  , JUDL, N   , N   , U   , N   ],
-            [N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , JDL , R   , N   , D   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   ],
-            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   ],
-            [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ]
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , E   , N   , N   , N   , E   , N   , N   , JUL , LR  , LR  , LR  , LR  , JUR , N   , N   , N   , N   , N   , E   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , E   , E   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , L   , R   , N   , D   , N   , N   , N   , N   , E   , N   , N   ],
+            [N   , L   , R   , L   , R   , N   , N   , N   , N   , E   , L   , LR  , LR  , JUR , N   , N   , N   , UD  , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , UD  , N   , N   , N   , N   , P   , N   , N   , N   , N   , E   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , E   , N   ],
+            [N   , N   , N   , N   , N   , N   , JUL , LR  , LR  , LR  , JUDL, N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   , U   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , JDL , R   , N   , D   , N   , N   , N   , U   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , JDL , LR  , LR  , LR  , LR  , JDR , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   , N   , D   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , E   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ]
         ]
         self.wallstylemap = [  # 壁障害物の種類の割り当て
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         ]
         self.wallstyles = [  # 割り当てとその使用する種類
-            WallStyleOrange()
+            WallStyleOrange(),
+            WallStyleWood()
         ]
 
         self.world = World(self)
