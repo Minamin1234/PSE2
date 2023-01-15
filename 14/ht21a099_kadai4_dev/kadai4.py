@@ -1132,9 +1132,9 @@ class EnemySkins(CharacterSkins):
 class Weapon:
     owner: Pawn = None  # 所有者
     bullet: Bullet = None  # 発射する弾
-    sound_fire: str = ""  # 発砲音
-    sound_reload: str = ""  # 装填音
-    sound_empty: str = ""  # 空撃ち音
+    sound_fire: pygame.mixer.Sound = None  # 発砲音
+    sound_reload: pygame.mixer.Sound = None  # 装填音
+    sound_empty: pygame.mixer.Sound = None  # 空撃ち音
     damage = 15  # 基本ダメージ
     damage_multiply = 0.5  # ダメージ乗数
     capacity: int = 10  # 装弾数
@@ -1149,12 +1149,16 @@ class Weapon:
     capacity_: int = 0  # 現在の弾数
     is_reloading_: bool = False  # 現在装填中かどうか
     is_ready: bool = True  # 発射可能かどうか
+    volume_: float = 1.0
 
     def __init__(self, owner: Pawn):
         self.fire_mode = self.FIRE_MODE_SINGLE
         self.owner = owner
         self.capacity_ = self.capacity
         self.is_ready = True
+        self.sound_fire = sounds.handgun_shot
+        self.sound_empty = sounds.handgun_empty
+        self.sound_reload = sounds.handgun_reload
         pass
 
     # 弾を発射する
@@ -1174,12 +1178,17 @@ class Weapon:
                     blt.set_direction(direction)  # 飛翔方向を設定
                     blt.location += direction * 10
                     self.capacity_ -= 1  # 現在の装弾数を減らす
-                    sounds.handgun_shot.play()  # 発砲音を鳴らす
+                    #sounds.handgun_shot.set_volume(self.volume_)
+                    #sounds.handgun_shot.play()  # 発砲音を鳴らす
+                    self.sound_fire.set_volume(self.volume_)
+                    self.sound_fire.play()
                     self.is_ready = False
                     clock.schedule_unique(self.on_after_fire, self.fire_rate)
                 pass
             else:  # 弾が残っていない時
-                sounds.handgun_empty.play()  # 空撃ち音を鳴らす
+                # sounds.handgun_empty.play()  # 空撃ち音を鳴らす
+                self.sound_empty.set_volume(self.volume_)
+                self.sound_empty.play()
             pass
         pass
 
@@ -1195,7 +1204,9 @@ class Weapon:
     def reload(self):
         if not self.is_reloading_:  # 装填中でなければ
             self.is_reloading_ = True  # 装填中であるかどうかを設定する(処理が重複しないように)
-            sounds.handgun_reload.play()  # 装填音を鳴らす
+            # sounds.handgun_reload.play()  # 装填音を鳴らす
+            self.sound_reload.set_volume(self.volume_)
+            self.sound_reload.play()
             self.set_reloadingskin()
             clock.schedule_unique(self.on_ended_reload, self.reload_time)  # 装填時間分遅らせて装填完了処理を呼ぶ
         pass
@@ -1257,6 +1268,9 @@ class SMG(Weapon):
         self.diffusion = 0.5
         self.max_diffangle = 20
         self.fire_mode = self.FIRE_MODE_AUTO
+        self.sound_fire = sounds.smg_shot
+        self.sound_empty = sounds.smg_empty
+        self.sound_reload = sounds.smg_reload
         pass
 
     def fire(self, at: Vector2):
