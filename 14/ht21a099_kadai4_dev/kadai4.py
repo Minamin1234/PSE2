@@ -1364,18 +1364,25 @@ class Floor(Ground):
 
 # 壁障害物の種類とそれに対応する画像ファイル名の定義をまとめたクラス
 class WallStyle:
-    wall_up = ""
-    wall_down = ""
-    wall_left = ""
-    wall_right = ""
-    wall_corner_upleft = ""
-    wall_corner_upright = ""
-    wall_corner_downleft = ""
-    wall_corner_downright = ""
-    wall_joint_upleft = ""
-    wall_joint_upright = ""
-    wall_joint_downleft = ""
-    wall_joint_donwright = ""
+    wall_up = ""  # U
+    wall_down = ""  # D
+    wall_left = ""  # L
+    wall_right = ""  # R
+    wall_corner_upleft = ""  # CUL
+    wall_corner_upright = ""  # CUR
+    wall_corner_downleft = ""  # CDL
+    wall_corner_downright = ""  # CDR
+    wall_joint_upleft = ""  # JUL
+    wall_joint_upright = ""  # JUR
+    wall_joint_downleft = ""  # JDL
+    wall_joint_donwright = ""  # JDR
+    wall_lefttoright = ""  # LR
+    wall_uptodown = ""  # UD
+    wall_joint_uptodown_left = ""  # JUDL
+    wall_joint_updodown_right = ""  # JUDR
+    wall_joint_lefttoright_up = ""  # JLRU
+    wall_joint_lefttoright_down = ""  # JLRD
+    wall_pillar = ""  # P
 
     def __init__(self):
         pass
@@ -1397,6 +1404,38 @@ class WallStyleOrange(WallStyle):
         self.wall_joint_upright = "wall_orange_joint_upright"
         self.wall_joint_downleft = "wall_orange_joint_downleft"
         self.wall_joint_donwright = "wall_orange_joint_downright"
+        self.wall_lefttoright = "wall_orange_leftright"
+        self.wall_uptodown = "wall_orange_updown"
+        self.wall_joint_uptodown_left = "wall_orange_joint_updown_left"
+        self.wall_joint_updodown_right = "wall_orange_joint_updown_right"
+        self.wall_joint_lefttoright_up = "wall_orange_joint_leftright_up"
+        self.wall_joint_lefttoright_down = "wall_orange_joint_leftright_down"
+        self.wall_pillar = "wall_orange_pillar"
+        pass
+
+
+class WallStyleWood(WallStyle):
+    def __init__(self):
+        super().__init__()
+        self.wall_up = "wall_wood_up"
+        self.wall_down = "wall_wood_down"
+        self.wall_left = "wall_wood_left"
+        self.wall_right = "wall_wood_right"
+        self.wall_corner_upleft = "wall_wood_corner_upleft"
+        self.wall_corner_upright = "wall_wood_corner_upright"
+        self.wall_corner_downleft = "wall_wood_corner_downleft"
+        self.wall_corner_downright = "wall_wood_corner_downright"
+        self.wall_joint_upleft = "wall_wood_joint_upleft"
+        self.wall_joint_upright = "wall_wood_joint_upright"
+        self.wall_joint_downleft = "wall_wood_joint_downleft"
+        self.wall_joint_donwright = "wall_wood_joint_downright"
+        self.wall_lefttoright = "wall_wood_leftright"
+        self.wall_uptodown = "wall_wood_updown"
+        self.wall_joint_uptodown_left = "wall_wood_joint_updown_left"
+        self.wall_joint_updodown_right = "wall_wood_joint_updown_right"
+        self.wall_joint_lefttoright_up = "wall_wood_joint_leftright_up"
+        self.wall_joint_lefttoright_down = "wall_wood_joint_leftright_down"
+        self.wall_pillar = "wall_wood_pillar"
         pass
 
 
@@ -1422,6 +1461,13 @@ CUL = 9  # Corner_upleft
 CUR = 10  # Corner_upright
 CDL = 11  # Corner_downleft
 CDR = 12  # Corner_downright
+LR = 13  # LeftToRight
+UD = 14  # UpToDown
+JUDL = 15  # Joint_UpToDown_Left
+JUDR = 16  # Joint_UpTODown_Right
+JLRU = 17  # Joint_LeftToRight_Up
+JLRD = 18  # Joint_LeftToRight_Down
+P = 19  # Pillar
 
 
 # プレイヤー/敵共通のキャラクタークラス
@@ -1861,7 +1907,7 @@ class Map:
             for x in range(0, self.size_.x):
                 obj_type = self.wallobj_map[y][x]
                 obj: Wall = None
-                objstyle = self.wallobj_styles[self.wallobj_style_map[y][x]]
+                objstyle: WallStyle = self.wallobj_styles[self.wallobj_style_map[y][x]]
                 if obj_type == N:
                     continue
                 if obj_type == U:
@@ -1900,9 +1946,29 @@ class Map:
                 elif obj_type == CDR:
                     obj = Wall(objstyle.wall_corner_downright)
                     pass
+                elif obj_type == LR:
+                    obj = Wall(objstyle.wall_lefttoright)
+                    pass
+                elif obj_type == UD:
+                    obj = Wall(objstyle.wall_uptodown)
+                    pass
+                elif obj_type == JUDL:
+                    obj = Wall(objstyle.wall_joint_uptodown_left)
+                    pass
+                elif obj_type == JUDR:
+                    obj = Wall(objstyle.wall_joint_updodown_right)
+                    pass
+                elif obj_type == JLRU:
+                    obj = Wall(objstyle.wall_joint_lefttoright_up)
+                    pass
+                elif obj_type == JLRD:
+                    obj = Wall(objstyle.wall_joint_lefttoright_down)
+                elif obj_type == P:
+                    obj = Wall(objstyle.wall_pillar)
+                    pass
                 pass
-                obj.location.x = obj.width * x
-                obj.location.y = obj.height * y
+                obj.location.x = (obj.width * x) + obj.width * 0.5
+                obj.location.y = (obj.height * y) + obj.width * 0.5
                 obj.initiallocation = Vector2.get_vector(obj.location)
                 obj.spawn(self.world)
                 self.objs_.append(obj)
@@ -2001,37 +2067,38 @@ class Game:
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         ]
         self.groundstyles = [  # 割り当てと使用する地面画像一覧
             "tile_01",
-            "tile_05"
+            "tile_05",
+            "tile_42"
         ]
         self.wallmap = [  # 壁障害物の配置
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, L, R, N, U, CUL, CUR, N, N, N, N, N],
-            [N, N, N, N, N, N, N, D, CDL, CDR, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, L, R, L, R, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, U, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, D, N, N],
-            [N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , L   , R   , L   , R   , N   , N   , N   , N   , N   , L   , LR  , LR  , JUR , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , JUL , LR  , LR  , LR  , JUDL, N   , N   , U   , N   ],
+            [N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , JDL , R   , N   , D   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   ],
+            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ]
         ]
         self.wallstylemap = [  # 壁障害物の種類の割り当て
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
