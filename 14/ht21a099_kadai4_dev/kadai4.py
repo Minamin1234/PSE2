@@ -1012,7 +1012,7 @@ class Bullet(Pawn):
         self.isKeyInput = False
         self.is_bounce = True
         self.bounces = 2
-        self.velocity = 30.0
+        self.velocity = 900.0
         self.owner = owner
 
     # 飛翔方向を設定します
@@ -1063,8 +1063,8 @@ class Bullet(Pawn):
                     self.direction = -self.direction
                     self.bounce()
 
-        self.location.x += self.direction.x * self.velocity
-        self.location.y += self.direction.y * self.velocity
+        self.location.x += self.direction.x * self.velocity * dt
+        self.location.y += self.direction.y * self.velocity * dt
 
 
 # ショットガン用の弾
@@ -1072,7 +1072,7 @@ class ShotShell(Bullet):
 
     def __init__(self, owner: Pawn):
         super().__init__(owner)
-        self.velocity = 20
+        self.velocity = 600
         self.owner = owner
         pass
 
@@ -1080,7 +1080,7 @@ class ShotShell(Bullet):
 class SMGShell(Bullet):
     def __init__(self, owner: Pawn):
         super().__init__(owner)
-        self.velocity = 30
+        self.velocity = 900
         self.is_bounce = False
         self.hit_once = True
 
@@ -1565,7 +1565,7 @@ class Player(Character):
         # self.SkinPic = "manblue_gun"  # 画像とActorは90度ずれている
         super().__init__(self.SkinPic)
         self.HP = 500
-        self.CharacterMoveSpeed = 5
+        self.CharacterMoveSpeed = 150
         self.isBlock = True
         self.isKeyInput = True
         self.weapons = [
@@ -1736,7 +1736,7 @@ class Enemy(Character):
         super().__init__(self.SkinPic)
         self.HP = 50
         self.Def_multiply = 0.5
-        self.CharacterMoveSpeed = 5
+        self.CharacterMoveSpeed = 0
         self.isBlock = False
         self.isKeyInput = False
         self.target_ = None
@@ -1960,8 +1960,8 @@ class Map:
     def update(self, dt):
         moveinput = self.player.moveInput
         diff = Vector2(0, 0)
-        diff.x = -moveinput.x * self.player.CharacterMoveSpeed
-        diff.y = moveinput.y * self.player.CharacterMoveSpeed
+        diff.x = -moveinput.x * self.player.CharacterMoveSpeed * dt
+        diff.y = moveinput.y * self.player.CharacterMoveSpeed * dt
         playerpos = self.get_worldlocation(self.center_)
         if playerpos.x >= self.width_:
             self.move_map(-diff * 3)
@@ -2077,20 +2077,20 @@ class Game:
         ]
         self.wallmap = [  # 壁障害物の配置
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , E   , N   , N   , N   , E   , N   , N   , JUL , LR  , LR  , LR  , LR  , JUR , N   , N   , N   , N   , N   , E   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , E   , E   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , L   , R   , N   , D   , N   , N   , N   , N   , E   , N   , N   ],
+            [N   , N   , N   , E   , L   , R   , N   , U   , CUL , CUR , E   , N   , N   , N   , E   , N   , N   , JUL , LR  , LR  , LR  , LR  , JUR , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   , E   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , E   , N   , UD  , N   , N   , N   , N   , E   , N   , E   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , L   , R   , N   , D   , N   , N   , N   , N   , N   , E   , N   ],
             [N   , L   , R   , L   , R   , N   , N   , N   , N   , E   , L   , LR  , LR  , JUR , N   , N   , N   , UD  , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , UD  , N   , N   , N   , N   , P   , N   , N   , N   , N   , E   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , E   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , UD  , N   , N   , N   , N   , P   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , JUL , LR  , LR  , LR  , JUDL, N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   , U   , N   , N   , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , JDL , R   , N   , D   , N   , N   , N   , U   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , JDL , LR  , LR  , LR  , LR  , JDR , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   , N   , D   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , E   , N   ],
-            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ]
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   , N   , UD  , N   , N   , N   , N   , N   , N   , N   , UD  , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   , N   , D   , N   , N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , E   , N   , N   , N   , N   , N   ]
         ]
         self.wallstylemap = [  # 壁障害物の種類の割り当て
             [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
@@ -2104,9 +2104,9 @@ class Game:
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
         ]
         self.wallstyles = [  # 割り当てとその使用する種類
