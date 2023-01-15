@@ -1468,6 +1468,7 @@ JUDR = 16  # Joint_UpTODown_Right
 JLRU = 17  # Joint_LeftToRight_Up
 JLRD = 18  # Joint_LeftToRight_Down
 P = 19  # Pillar
+E = 20  # Enemy
 
 
 # プレイヤー/敵共通のキャラクタークラス
@@ -1578,7 +1579,6 @@ class Player(Character):
         self.ui_main = PlayerUI(self)
         self.ui_pause = MenuUI(self)
         self.ui = self.ui_main
-        print(self.SkinPic)
 
     def update(self, dt):
         super().update(dt)
@@ -1747,7 +1747,6 @@ class Enemy(Character):
         self.targets_ = []
         self.direction_ = Vector2(0, 0)
 
-        print(self.SkinPic)
 
     # ワールド内のオブジェクトを探索し、自身から指定した半径内に含まれるプレイヤーを探します。
     def find(self):
@@ -1826,7 +1825,8 @@ class Enemy(Character):
     def on_hit(self, actor):
         super().on_hit(actor)
         blt: Bullet = actor
-        self.apply_damage(blt)
+        if type(blt.owner) is not Enemy:
+            self.apply_damage(blt)
 
     def apply_damage(self, bullet: Bullet):
         super().apply_damage(bullet)
@@ -1844,6 +1844,7 @@ class Enemy(Character):
 # ワールド内を構成するマップクラス
 class Map:
     player: Player = None  # プレイヤー
+    enemy_class = None  # 敵クラスオブジェクト
     world: World = None  # マップを生成するワールド
     ground_map: list = []  # 地面配置マップ
     ground_style_map: list = []  # 地面スタイルマップ
@@ -1862,6 +1863,7 @@ class Map:
     def __init__(self, world: World, player):
         self.world = world
         self.player = player
+        self.enemy_class = Enemy
         self.center_.x = WIDTH / 2
         self.center_.y = HEIGHT / 2
         self.width_ = 0
@@ -1901,6 +1903,8 @@ class Map:
 
         self.width_ = self.map_[0].width * self.size_.x
         self.height_ = self.map_[0].height * self.size_.y
+
+        enemies = []
 
         # 物体の生成と配置
         for y in range(0, self.size_.y):
@@ -1966,12 +1970,28 @@ class Map:
                 elif obj_type == P:
                     obj = Wall(objstyle.wall_pillar)
                     pass
+                elif obj_type == E:
+                    e = self.enemy_class()
+                    e.location = Vector2(0, 0)
+                    e.location.x = self.map_[0].width * x
+                    e.location.y = self.map_[0].height * y
+                    enemies.append(e)
+                    continue
+                    pass
                 pass
                 obj.location.x = (obj.width * x) + obj.width * 0.5
                 obj.location.y = (obj.height * y) + obj.width * 0.5
                 obj.initiallocation = Vector2.get_vector(obj.location)
                 obj.spawn(self.world)
                 self.objs_.append(obj)
+                pass
+            pass
+        pass
+        for e in enemies:
+            e.spawn(self.world)
+            gm: Game = self.world.owner
+            gm.enemies.append(e)
+    pass
 
     def update(self, dt):
         moveinput = self.player.moveInput
@@ -2020,10 +2040,18 @@ class Map:
 
 # ゲームを実行/管理するクラス
 class Game:
+    sound_killed: pygame.mixer.Sound = None
+    sound_finished: pygame.mixer.Sound = None
+    sound_gameover: pygame.mixer.Sound = None
+    volume: float = 1
     totalizer: Totalizer = None  # スコア集計オブジェクト
     enemies: list = []
 
     def __init__(self):
+        self.sound_killed = sounds.sfx_killed
+        self.sound_finished = sounds.sfx_finished
+        self.sound_gameover = sounds.sfx_dead
+        self.volume = 1.0
         self.enemies = []
         self.mapsize = Vector2(0, 0)
         self.groundmap= []
@@ -2085,18 +2113,18 @@ class Game:
         ]
         self.wallmap = [  # 壁障害物の配置
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , L   , R   , N   , U   , CUL , CUR , E   , N   , N   , N   , E   ],
             [N   , N   , N   , N   , N   , N   , N   , D   , CDL , CDR , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
-            [N   , L   , R   , L   , R   , N   , N   , N   , N   , N   , L   , LR  , LR  , JUR , N   ],
+            [N   , L   , R   , L   , R   , N   , N   , N   , N   , E   , L   , LR  , LR  , JUR , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , D   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , JUL , LR  , LR  , LR  , JUDL, N   , N   , U   , N   ],
             [N   , N   , N   , N   , N   , N   , D   , N   , N   , N   , JDL , R   , N   , D   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , P   , N   ],
-            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , N   , N   ],
+            [N   , N   , N   , N   , N   , N   , U   , N   , N   , N   , N   , N   , N   , E   , N   ],
             [N   , N   , N   , N   , N   , N   , JDL , LR  , LR  , LR  , LR  , LR  , LR  , R   , N   ],
             [N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   , N   ]
         ]
@@ -2193,12 +2221,22 @@ class Game:
         datas_.output_scores("scores.txt")
         self.player.swap_ui(ResultUI(self.player, asfinish))
         self.world.set_pause(True)
+        if asfinish:
+            self.sound_finished.set_volume(self.volume)
+            self.sound_finished.play()
+            pass
+        else:
+            self.sound_gameover.set_volume(self.volume)
+            self.sound_gameover.play()
+            pass
         pass
 
     # 敵が撃破された際に呼ばれる
     def on_destroyed_enemy(self, enemy: Enemy):
         if enemy in self.enemies:
             self.enemies.remove(enemy)
+            self.sound_killed.set_volume(self.volume)
+            self.sound_killed.play()
         if len(self.enemies) <= 0:
             self.on_ended_game(asfinish=True)
         pass
