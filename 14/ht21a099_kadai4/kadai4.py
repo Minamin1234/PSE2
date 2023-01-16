@@ -500,58 +500,6 @@ class UITextBox(UIText):
         pass
 
 
-# ボタン要素クラス
-class UIButton(UIElement):
-    backgroundcolor: ColorRGB = ColorRGB(0, 0, 0)  # ボタンのカラー
-    rect_: Rect = None  # ボタンの四角形オブジェクト
-    on_click = None  # ボタンが押された際の処理関数
-
-    def __init__(self, owner: UI):
-        super().__init__(owner)
-        self.rect_ = Rect(Vector2.get_tuple(self.pos_),
-                          Vector2.get_tuple(self.size))
-
-    def draw(self):
-        super().draw()
-        self.rect_ = Rect(Vector2.get_tuple(self.pos_),
-                          Vector2.get_tuple(self.size))
-        screen.draw.filled_rect(self.rect_, self.backgroundcolor.get_tuple())
-
-    # ボタンが押された時の処理
-    def on_clicked(self):
-        if not self.on_click is None and callable(self.on_click):
-            self.on_click(self)
-        pass
-
-    def on_mouse_down(self, pos):
-        if self.rect_.collidepoint(pos):
-            self.on_clicked()
-        pass
-
-
-# テキスト付ボタン要素クラス
-class UITextedButton(UIButton):
-    textcolor: ColorRGB = ColorRGB(0, 0, 0)
-    textpos: Vector2 = Vector2(0, 0)
-    uitext: UIText = None
-
-    def __init__(self, owner: UI):
-        super().__init__(owner)
-        self.uitext = UIText(owner)
-        self.uitext.size = self.size
-        self.uitext.use_percentpos = False
-        self.uitext.is_center = True
-
-    def draw(self):
-        super().draw()
-        pos = Vector2(0, 0)
-        pos.x = self.pos_.x + self.textpos.x
-        pos.y = self.pos_.y + self.textpos.y
-        self.uitext.pos = pos
-        self.uitext.draw()
-        pass
-
-
 # UI要素クラスを継承した進捗バークラス
 class UIProgressBar(UIElement):
     percent: float = 1.0  # 進捗率(1.0で満たされ、0.0は何もなし)
@@ -2145,11 +2093,9 @@ class Game:
         self.player.swap_ui(ResultUI(self.player, asfinish))
         self.world.set_pause(True)
         if asfinish:
-            self.sound_finished.set_volume(self.volume)
             self.sound_finished.play()
             pass
         else:
-            self.sound_gameover.set_volume(self.volume)
             self.sound_gameover.play()
             pass
         pass
