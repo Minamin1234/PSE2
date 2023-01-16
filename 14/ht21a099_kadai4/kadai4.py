@@ -50,6 +50,7 @@ class ColorRGB:
         self.g = g % 256
         self.b = b % 256
 
+    # タプルを返す
     def get_tuple(self):
         return (self.r, self.g, self.b)
 
@@ -63,6 +64,7 @@ class Vector2:
     def get_vector(v):
         return Vector2(v.x, v.y)
 
+    # ベクトルをタプルとして返す
     def get_tuple(v):
         return (v.x, v.y)
 
@@ -175,6 +177,7 @@ class Totalizer:
         self.initialize()
         pass
 
+    # 保持しているスコアデータを初期化する
     def initialize(self):
         self.scores_ = dict()
         self.loaded = False
@@ -1140,7 +1143,7 @@ class Weapon:
                     direction = Vector2.get_direction_fromdeg(direction - 90)  # 角度から方向ベクトルを取得
                     if Util.random_bool(self.diffusion):  # 拡散値の確率によって、拡散させるかどうかをランダムに決定する
                         direction = Util.random_rotatevector(direction, self.max_diffangle)  # 方向ベクトルにランダムな角度に回転させる
-                        print("Diffusion")
+                        pass
                     blt.set_direction(direction)  # 飛翔方向を設定
                     blt.location += direction * 10
                     self.capacity_ -= 1  # 現在の装弾数を減らす
