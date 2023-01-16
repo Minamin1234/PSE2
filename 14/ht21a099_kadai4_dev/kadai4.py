@@ -221,7 +221,6 @@ class Totalizer:
         if self.loaded:
             return
         path_ = self.joint_currentdirectoryfile(filename)
-        data_ = ""
         try:
             with open(path_, "r") as f:
                 data_ = f.readlines()
@@ -295,6 +294,7 @@ class Totalizer:
                 pass
             pass
         pass
+        print(path)
         print("--Done--")
 
     # 指定したプレイヤー名の順位を返す。存在しない場合等は0を返す
@@ -313,7 +313,7 @@ class Totalizer:
 
     # 本プログラムと同一ディレクトリにあるファイル名と結合してフルパスを返す
     def joint_currentdirectoryfile(self, filename: str):
-        result_ = os.path.join(os.path.dirname(os.getcwd()), filename)
+        result_ = os.path.join(os.getcwd(), filename)
         return result_
 
 

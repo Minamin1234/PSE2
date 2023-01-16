@@ -6,8 +6,8 @@ Rank PlayerName Score      Kills      Hits       PlayerHP
 5    aa         1119       6          40         0         
 6    mwmw       508        1          40         0         
 7    aaaaa      447        2          10         81        
-8    aaa        371        2          8          78        
-9    aaaaaa     312        2          3          94        
+8    aaaaaa     439        2          43         0         
+9    aaa        371        2          8          78        
 10   awaaa      227        2          7          86        
 11   min        220        1          43         0         
 12   kkk        204        2          20         49        
