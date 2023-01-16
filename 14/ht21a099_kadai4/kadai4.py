@@ -1,5 +1,6 @@
 # HT21A099 南　李玖
 from pse2pgzrun import *  # type: ignore
+import time
 import math
 import os.path
 import random
@@ -141,6 +142,7 @@ class Vector2:
 class ScoreData:
     playername: str = ""  # プレイヤー名
     score: int = 0  # スコア
+    cleartime: int = 0  # クラスタイム
     kills: int = 0  # 敵の撃破数
     playerhp = 0  # ゲーム終了時のHP
     hits: int = 0  # 被弾数
@@ -198,16 +200,17 @@ class Totalizer:
             pass
 
         for i, d in enumerate(data_):
-            if i == 0 or len(d) < 6:
+            if i == 0 or len(d) < 7:
                 continue
                 pass
             datas_ = d.split()
             newdata_ = ScoreData()
             newdata_.playername = datas_[1]
             newdata_.score = int(datas_[2])
-            newdata_.kills = int(datas_[3])
-            newdata_.hits = int(datas_[4])
-            newdata_.playerhp = int(datas_[5])
+            newdata_.cleartime = int(datas_[3])
+            newdata_.kills = int(datas_[4])
+            newdata_.hits = int(datas_[5])
+            newdata_.playerhp = int(datas_[6])
             self.scores_[datas_[1]] = newdata_
             pass
         self.loaded = True
@@ -229,7 +232,7 @@ class Totalizer:
     # 読み込んだスコアデータ群をテキストファイルに書き出す
     def output_scores(self, filename: str):
         path = self.joint_currentdirectoryfile(filename)
-        mxcnt = 10
+        mxcnt = 12
         for data in self.scores_.values():
             d: ScoreData = data
             d.fit()
@@ -239,6 +242,7 @@ class Totalizer:
             rk = "Rank"
             pn = "PlayerName"
             sc = "Score"
+            ct = "ClearTime(s)"
             ks = "Kills"
             hs = "Hits"
             ph = "PlayerHP"
@@ -246,6 +250,7 @@ class Totalizer:
             f.write(f"{rk:{ranklen}} ")
             f.write(f"{pn:{mxcnt}} ")
             f.write(f"{sc:{mxcnt}} ")
+            f.write(f"{ct:{mxcnt}} ")
             f.write(f"{ks:{mxcnt}} ")
             f.write(f"{hs:{mxcnt}} ")
             f.write(f"{ph:{mxcnt}}\n")
@@ -254,6 +259,7 @@ class Totalizer:
                 f.write(f"{str(i + 1):{ranklen}} ")
                 f.write(f"{d.playername:{mxcnt}} ")
                 f.write(f"{str(d.score):{mxcnt}} ")
+                f.write(f"{str(d.cleartime):{mxcnt}} ")
                 f.write(f"{str(d.kills):{mxcnt}} ")
                 f.write(f"{str(d.hits):{mxcnt}} ")
                 f.write(f"{str(d.playerhp):{mxcnt}}\n")
@@ -347,6 +353,12 @@ class World:
     # オブジェクトの更新処理の停止を設定する
     def set_pause(self, pause: bool):
         self.ispause_ = pause
+        gm: Game = self.owner
+        if pause:
+            gm.start_pause()
+            pass
+        else:
+            gm.end_pause()
 
     # 現在、オブジェクトの更新処理が一時停止しているかどうかを返す
     def get_pause(self):
@@ -474,11 +486,13 @@ class UIText(UIElement):
 
 # テキスト入力/表示が可能なテキストボックス
 class UITextBox(UIText):
+    text_limit: int = 10  # 文字数制限
     is_focus: bool = False  # テキストボックスがフォーカスされているかどうか
     on_enter = None
 
     def __init__(self, owner: UI):
         super().__init__(owner)
+        self.text_limit = 10
         self.is_focus = False
         pass
 
@@ -487,16 +501,23 @@ class UITextBox(UIText):
         pass
 
     def on_key_down(self, key):
-        if self.is_focus:
-            if key == pygame.K_RETURN:
-                self.is_focus = False
-                if self.on_enter is not None and callable(self.on_enter):
-                    self.on_enter(self)
-            elif key == pygame.K_BACKSPACE:
-                self.content = self.content[:-1]
-            else:
-                if 0 <= key <= 0x10ffff:
-                    self.content += chr(key)
+        if key == pygame.K_UNKNOWN:
+            return
+        try:
+            if self.is_focus:
+                if key == pygame.K_RETURN:
+                    self.is_focus = False
+                    if self.on_enter is not None and callable(self.on_enter):
+                        self.on_enter(self)
+                elif key == pygame.K_BACKSPACE:
+                    self.content = self.content[:-1]
+                else:
+                    if len(self.content) > self.text_limit:
+                        return
+                    if 0 <= key <= 0x10ffff:
+                        self.content += chr(key)
+        except:
+            pass
         pass
 
 
@@ -1561,13 +1582,16 @@ class Player(Character):
         if key == pygame.K_ESCAPE:  # Escを押した時の挙動
             self.show_menu()
         if not self.world.get_pause():  # ワールドが一時停止状態でなければ
-            c = chr(key)
-            if c.isdecimal():
-                i = int(c) - 1
-                if 0 <= i <= 9:
-                    self.swap_weapon(i)
-                    self.Skins.set_skin(self)
-                    pass
+            try:
+                c = chr(key)
+                if c.isdecimal():
+                    i = int(c) - 1
+                    if 0 <= i <= 9:
+                        self.swap_weapon(i)
+                        self.Skins.set_skin(self)
+                        pass
+            except:
+                pass
 
         pass
 
@@ -1910,12 +1934,18 @@ class Map:
 
 # ゲームを実行/管理するクラス
 class Game:
+
     sound_killed: pygame.mixer.Sound = None
     sound_finished: pygame.mixer.Sound = None
     sound_gameover: pygame.mixer.Sound = None
     volume: float = 1
     totalizer: Totalizer = None  # スコア集計オブジェクト
     enemies: list = []
+    start_time_: float = None
+    end_time_: float = 0
+    pause_start_time_: float = 0
+    pause_end_time_: float = 0
+    pause_time_: float = 0
 
     def __init__(self):
         self.sound_killed = sounds.sfx_killed
@@ -1937,6 +1967,7 @@ class Game:
         self.enemy2: Enemy = None
         self.isloading: bool = False
         self.totalizer = Totalizer()
+        self.start_time()
         pass
 
     def initialize(self):
@@ -2081,11 +2112,34 @@ class Game:
             self.world.on_key_up(key)
         pass
 
+    # 一時停止時間の計測を開始します
+    def start_pause(self):
+        self.pause_start_time_ = time.time()
+        pass
+
+    # 一時停止時間の計測を終了して一時停止時間を加算します
+    def end_pause(self):
+        self.pause_end_time_ = time.time()
+        self.pause_time_ += self.pause_end_time_ - self.pause_start_time_
+        self.pause_start_time_, self.pause_end_time_ = 0, 0
+        pass
+
+    # プレイ時間を計測開始します
+    def start_time(self):
+        self.start_time_ = time.time()
+        pass
+
+    # プレイ時間の計測を終了してプレイ時間を求めます．(一時停止時間は含めません)
+    def end_time(self):
+        result = (time.time() - self.start_time_) - self.pause_time_
+        return result
+
     def get_playerrank(self):
         return self.totalizer.get_rank(self.player.playername)
 
     def on_ended_game(self, asfinish=False):
         data_ = self.player.get_scoredata()
+        data_.cleartime = int(self.end_time())
         datas_ = self.totalizer
         datas_.input("scores.txt")
         datas_.add_scoredata(data_)
@@ -2136,6 +2190,8 @@ def on_mouse_up(pos):
 
 
 def on_key_down(key):
+    if key == pygame.K_UNKNOWN:
+        return
     game.on_key_down(key)
     pass
 
